@@ -1,0 +1,303 @@
+		GStreamer Basics
+		¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+Basé sur les tutos de http://docs.gstreamer.com/ de gstreamer VERSION 0.10
+http://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/gstreamer-0.10/libgstreamer.html
+Implémentation dans ~/TMP/GStreamer/ (temporaire) /!\ VERSION 1.0
+
+I) hello.c: ⇒ donne qqch d'équivalent à gst-launch-*
+¯¯¯¯¯¯¯¯¯¯
+Un pipeline:
+	Ensemble d'objets ordonnés-chaînés qui débute par des sources (producteurs de données) et se termine par des “sinks” (consommateurs des données).
+	Entre ces 2 extrémités, on peut avoir des filtres, des démuxers…
+
+A/
+gst_init (&argc, &argv);
+	→ trivial
+
+B/
+GstElement *pipeline = gst_parse_launch("playbin[2] uri=[proto]://[path]", NULL);
+	→ Crée un pipeline tout-en-un de type playbin (resp. playbin2) ⇒ playbin2 ne marche pas avec mon Gtreamer-1.0 au moment d'écrire ce tuto.
+
+C/
+gst_element_set_state(pipeline, GST_STATE_PLAYING);
+return {GST_STATE_CHANGE_FAILURE, GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_ASYNC, GST_STATE_CHANGE_NO_PREROLL}
+	→ Change l'état du pipeline qui tourne dans un autre thread.
+GST_STATE_VOID_PENDING → GST_STATE_NULL → GST_STATE_READY → GST_STATE_PAUSED → GST_STATE_PLAYING
+
+D/
+GstBus *bus = gst_element_get_bus (pipeline);
+	→ Récupère le bus de messages générés par le pipeline (car autre thread)
+
+E/
+GstMessage *msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+	→ Récupération synchrone des messages: bloque à l'infini (GST_CLOCK_TIME_NONE) tant qu'on ne reçoit ni erreur, ni EOS.
+
+II) concept.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯
+http://docs.gstreamer.com/display/GstSDK/Basic+tutorial+3%3A+Dynamic+pipelines
+ Qu'est-ce qu'un GstElement?
+ Comment connecter les éléments entre eux ?
+ Comment adapter le comportement d'un élément ?
+ Comment observer le bus d'évènement du pipeline et en extraire l'infos des messages ?
+
+A/
+GstElement *source = gst_element_factory_make("videotestsrc", "la source");
+GstElement *sink = gst_element_factory_make("autovideosink", "le sink");
+	→ On crée 2 objets pour constituer notre pipeline. Le nom donné en 2ième paramètre permet de retrouver cet élément si on a perdu le pointeur et le 1er param. est le type d'objet:
+	"videotestsrc" est une source video.
+	"autovideosink" est un «sink» qui choisi la méthode la  mieux adaptée à notre système → indépendance de la plateforme.
+
+B/
+GstElement *pipeline = gst_pipeline_new ("test-pipeline");
+C/
+gst_bin_add_many(GST_BIN (pipeline), sink, source, NULL);
+	→ Un pipeline est un conteneur (GstBin) qui permet la synchro de tous les éléments qu'il contient. Il est donc essentiel. L'ordre n'a pas d'importance ici.
+
+D/
+gboolean gst_element_link (source, sink);
+	→ Lie la source VERS le sink. Ils doivent être dans le même GstBin. L'ordre est crucial ici.
+
+E/
+g_object_set (source, "pattern1", val1, "pattern2", val2, NULL);
+	→ Les GstElement sont des GObject, on peut dont les manipuler comme ça.
+	  Voir les propriétés de “videotestsrc”.
+	  Rq: gst-inspect [élément-name] permet d'inspecter les propriétés de tous les éléments, ou d'un en particulier.
+
+F/
+gst_element_set_state ; gst_element_get_bus ; gst_bus_timed_pop_filtered
+
+if (msg != NULL) {
+   GError *err;
+    gchar *debug_info;
+
+    switch (GST_MESSAGE_TYPE (msg)) {
+      case GST_MESSAGE_ERROR:
+        gst_message_parse_error (msg, &err, &debug_info);
+        fprintf(stderr, "Erreur reçu de l'élément «%s»: %s\n",
+		GST_OBJECT_NAME (msg->src), err->message);
+        fprintf(stderr, "Debugging info: %s\n",
+		debug_info ? debug_info : "none");
+        g_clear_error (&err);
+        g_free (debug_info);
+        break;
+      case GST_MESSAGE_EOS:
+        g_print ("End-Of-Stream reached.\n");
+        break;
+      default:
+        /* We should not reach here because we only asked for ERRORs and EOS */
+        fprintf(stderr, "Unexpected message received.\n");
+        break;
+    }
+    gst_message_unref (msg);
+}
+
+	→ Les GstMessage sont des structures assez complexes qui ne se manipulent qu'avec des macros comme GST_MESSAGE_TYPE(msg), GST_OBJECT_NAME(msg->src)
+
+III) dynamic_pipelines.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Être notifié des signaux envoyés par les GstElement.
+ Connecter les GstPad.
+
+A/
+data.source = gst_element_factory_make ("uridecodebin", "la source");
+data.audio_convert = gst_element_factory_make("audioconvert", "le convertisseur");
+data.audio_sink = gst_element_factory_make("autoaudiosink", "le sinkronizeur");
+	→ “uridecodebin” est une source au sens large (une vrai source + démuxage + décodage des données). Elle fait la moitié du travail que fait playbin.
+	  “audioconvert” est un convertisseur de format (portabilité).
+	  “autoaudiosink” est équivalent à autovideosink pour l'audio.
+
+B/
+On ne lie que data.audio_convert à data.audio_sink car on ne sait pas encore comment lier data.source à data.audio_convert (on ne sait pas ce que contient la source)
+
+C/
+g_object_set (data.source, "uri", cmd, NULL);
+	→ trivial
+
+D/
+g_signal_connect(data.source, "pad-added", G_CALLBACK (pad_added_handler), &data);
+	→ “uridecodebin” crée des GstPad à la volée en analysant le flux reçu. Il va falloir les lier à l'“audioconvert”.
+
+E/ Callback pad_added_handler()
+⋅Récupérer le sink pad du convert ET vérifier qu'il n'est pas déjà lié
+⋅Récupérer les aptitudes du pad reçu (gst_pad_query_caps ⇒ gst_caps_get_structure ⇒ gst_structure_get_name (donne le mime-type)) pour vérifier ce qu'on reçoit et aviser du traitement à effectuer
+⋅gst_pad_link (new_pad, sink_pad);
+	→ Créer le lien souhaité, les 2 pads doivent être contenus dans le même bin.
+
+** Voir I) et II) de HowTo-PLayback.txt **
+
+IV) time_management.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Recueillir des infos du pipeline ⇒ cela requiert l'utilisation de GstQuery.
+ Se déplacer dans le stream en live.
+
+A/
+msg = gst_bus_timed_pop_filtered(bus, 100 * GST_MSECOND,
+			GST_MESSAGE_STATE_CHANGED | _ERROR | _EOS | _DURATION);
+
+gst_element_query_position(pipeline, …);
+gst_element_query_duration(pipeline, …);
+	→ On poll le bus en sortant tous les 100⋅10¯³ secondes
+	  Si on est «PLAYING», on rafraichie notre UI.
+	  rq: ici GstElement fournie de quoi récupérer les bonnes infos sans passer par des GstQuery.
+
+B/
+g_print ("Position %" GST_TIME_FORMAT " / %" GST_TIME_FORMAT "\r",
+    GST_TIME_ARGS (current), GST_TIME_ARGS (data.duration));
+	→ Petit affichage funky
+
+C/
+gst_element_seek_simple(data.playbin, GST_FORMAT_TIME,
+			GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT,
+			30 * GST_SECOND);
+	→ Un seek «simple»: TIME → not byte; FLUSH → vire toutes les données déjà dans le pipeline, KEY_UNIT → va à la trame clef la plus proche et consomme directement les données (sinon, progresse à l'[octet/tps] qui correspond au seek puis consomme les données);
+
+D/ handle_message()
+case GST_MESSAGE_DURATION:
+	data->duration = GST_CLOCK_TIME_NONE;
+	→ La durée d'un stream peut changer en cours de lecture: on peut soit la changer ici, soit la mettre invalide et la changer dans le polling du bus.
+
+E/ handle_message()
+if (data->playing) {
+	GstQuery *query = gst_query_new_seeking(GST_FORMAT_TIME);
+	if (gst_element_query(data->playbin, query))
+		gst_query_parse_seeking(query, NULL, &seekable, &start, &end);
+	→ Les requêtes de tout ordres marchent mieux en PAUSED voir en PLAYING.
+	  On crée une requête de type {seek, TIME} et on la passe au pipeline.
+
+V) gui_toolkit.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Comment afficher la vidéo dans une fenêtre particulière ?
+ Comment mettre à jour une UI à partir des infos de GStreamer.
+ Comment ne recevoir que les messages qui nous intéressent.
+
+ Généralement, les “sink” implémentent l'interface XOverlay (GObject interface) qui permet de spécifier la fenêtre où envoyer la vidéo au lieu d'en créer une exprès ; Il suffit par exemple de (pseudo-code):
+	OVERLAY_CAST(mon_sink)->set_handle_window(…)
+ et ça marche. Cependant, playbin, en tant que pipeline qui fait le café, fournie des fonctions qui vont bien (et ce, pour les nombreuses interfaces qu'il implémente)
+
+A/
+#if defined (GDK_WINDOWING_X11)
+#include <gdk/gdkx.h>
+	→ Pour des raisons de portabilité, gdk fourni plusieurs entêtes différentes pour gérer l'affichage
+
+B/
+g_signal_connect(G_OBJECT(data.playbin), "[video audio text]-tags-changed",
+		 (GCallback) tags_cb, &data);
+	→ Être notifié des méta-données qui arrivent sur le stream avec :
+void tags_cb(GstElement *ppl, gint stream, CustomData *data) qui fait
+	gst_element_post_message(ppl,
+		gst_message_new_application((GST_OBJECT(ppl),
+			gst_structure_new("tags-changed", NULL))))
+	→ Si n'est pas dans le thread ppal, une modification des widgets Gtk est impossible, on doit donc informer le thread principal.
+	 Ceci est une manière de faire différente de playback_1 où on récupère les méta-données lorsqu'on passe en STATE_PAUSED.
+
+C/
+gst_bus_add_signal_watch(bus);
+g_signal_connect(G_OBJECT(bus), "message::<nom du message>",
+		(GCallback)error_cb, &data);
+	→ gst_bus_add_watch() permettait de récupérer tous les messages, ici, on sélectionne ceux qu'on veut traiter. Dans tout les cas, il faut une mainloop.
+	 Elle est ici créée par gtk_main().
+
+D/
+gst_object_unref(bus);
+	→ On en a plus besoin, ça n'est qu'une référence
+
+E/
+g_timeout_add_seconds(1, (GSourceFunc)refresh_ui, &data);
+	→ Rafraîchir le slider chaque seconde.
+
+F/ Realize callback
+ Elle est appelée une fois, lors du premier affichage de la fenêtre.
+GdkWindow *window = …
+#if defined (GDK_WINDOWING_X11)
+	guintptr window_handle = GDK_WINDOW_XID(window);
+ Puis:
+gst_[x|video]_overlay_set_window_handle(GST_[X|VIDEO]_OVERLAY(pipeline),
+				      window_handle);
+	→ API dépendante de la version de GStreamer.
+	  On ne peut faire ça que lorsqu'on reçoit le «realize event»  avant, la fenêtre n'est pas réalisée et gdk_window_ensure_native (window) échoue.
+
+
+G/ Expose event
+ Il faut le gérer que lorsqu'on est < STATE_PAUSED. Les “sink” gèrent le rafraichissement lorsqu'on est PLAYING ou PAUSED (on dit qu'il y a un flux de données dans les 2 cas).
+
+E/ callback du slider ⇒ évident
+	On pourrait ajouter une gestion plus fine du déplacement, genre tous les 0,3s max… dans cette implémentation, il se peut qu'un déplacement ne soit pas terminé lorsqu'un autre est demandé.
+
+F/ callback refresh_ui & refresh_slider
+ Faire avancer le slider si on est PLAYING /!!\ ou si on vient de passer en PAUSED
+ Ici, on vérifie aussi si on la durée du fichier.
+	→ Ça pourrait être fait en passant en PAUSED la première fois ⇒ oui, mais un stream met souvent à jour cette info, il est donc mieux recueillir cette info à tout les coups.
+	→ Est-ce que de nouvelle méta-données peuvent arriver dans un fichier sur disque ? ⇒ oui si c'est un dump de stream, sinon ?…
+ On désactive “value-changed” au moment de bouger le curseur, sinon on va appeler slider_cb()
+
+G/ tags_cb
+ Elle est appelée lorsque des méta-données arrivent dans le flux. Elle estr donc appelée dans un thread du pipeline, donc ce n'est pas le principal.
+ On ne peut donc pas mettre à jour un composant de Gtk depuis cette fonction.
+ Pour cela, on poste un message sur le bus du pipeline qui est écouté par le thread ppal.
+gst_element_post_message(pipeline, GstMessage* m);
+ avec m = gst_message_new_application(GST_OBJECT(pipeline),
+					gst_structure_new("tags-changed", NULL))
+	→ cela crée un type de message réservé aux applis (Gstreamer n'en fera rien), accompagné de l'information name="tags-changed".
+
+VI) formats_and_pad_caps.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Que sont les capacités d'un Pad ?
+ Comment et quand les récupérer ?
+ Pourquoi les connaître ?
+
+Les pads permettent de faire entrer et sortir des infos des éléments.
+Les capacités (caps) décrivent la nature des infos qui transitent par eux (vidéo RGB en 320×200 à 30 fps ; X264 en … à …)
+Un pad peu supporter plusieurs capacités qui peuvent en plus avoir des ranges (audio de 1 à 48000 Hz).
+Cependant, à un moment donné les infos qui transitent d'un pad à un autre doivent avoir un seul type.
+Lorsqu'on lie 2 pads, une négociation aboutie au choix d'un type de capacités communes et à valeur fixe (pas de range).
+C'est pourquoi il faut connaître les pad-caps des éléments qu'on utilise (cela parmet de comprendre pourquoi une négociation échoue).
+
+⋅ Les schémas de connecteurs (pad templates):
+  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Ce sont eux qui permettent d'instancier des connecteurs.
+Exemple de sink templates pour un objet audio sink et une vidéo source:
+
+*********************************************
+SINK template: 'sink'
+  Availability: Always
+  Capabilities:
+    audio/x-raw-int
+               signed: true
+                width: 16
+                depth: 16
+                 rate: [ 1, 2147483647 ]
+             channels: [ 1, 2 ]
+    audio/x-raw-int
+               signed: false
+                width: 8
+                depth: 8
+                 rate: [ 1, 2147483647 ]
+             channels: [ 1, 2 ]
+*********************************************
+SRC template: 'src'
+  Availability: Always
+  Capabilities:
+    video/x-raw-yuv
+                width: [ 1, 2147483647 ]
+               height: [ 1, 2147483647 ]
+            framerate: [ 0/1, 2147483647/1 ]
+               format: { I420, NV12, NV21, YV12, YUY2, Y42B, Y444, YUV9, YVU9, Y41B, Y800, Y8  , GREY, Y16 , UYVY, YVYU, IYU1, v308, AYUV, A420 }
+*********************************************
+
+Les […] sont des ranges et les {…} des listes.
+
+N.B: gst-inspect-0.10 permet d'avoir des infos sur les caps des éléments
+     Certains éléments questionnent les couches basses pour sélectionner les caps à offrir. Donc, celles-ci seront différentes celon l'état de l'élément (READY, PAUSED…)
+
+Ce tuto instantie 2 éléments à partir de leur “fabrique”, affiche leur caps-template, les lie et met le pipeline à PLAYING. À chaque changement d'état, les caps des sink pads sont affichées pour montrer le processus de négociation.
+
+/* Explication du code */
+
+VII) multithreading_and_pad_availability.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ GStreamer crée un thread par flux, les greffons peuvent aussi en créer, mais comment en créer de nouveaux pour certaines parties du pipeline ?
+ Qu'est-ce que la disponibilité des pads ?
+ Comment copier des flux ?
+
+⋅ Une partie de pipeline est appelée une branche et une application peut, en construisant un pipeline préciser qu'une branche de ce pipeline peut s'exécuter dans un thread différent.

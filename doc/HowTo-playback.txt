@@ -1,0 +1,55 @@
+		GStreamer Playback
+		¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+http://docs.gstreamer.com/display/GstSDK/Playback+tutorial+1%3A+Playbin2+usage
+
+I) playback-1.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+⋅ Utilisation + approfondie de playbin.
+⋅ Récupération de la liste des métadata.
+C'est un plugin, donc certains objets ne sont pas accessibles depuis core.
+Il faudra parfois les redéclarer (ex: GST_PLAY_FLAG_[VIDEO|AUDIO|TEXT]).
+
+A/
+data.playbin = gst_element_factory_make ("playbin", "el playbin");
+	→ Une autre façon de créer un pipeline (gst_parse_launch dans hello.c in HowTo-basics.txt)
+
+B/
+g_object_get (data.playbin, "flags", &flags, NULL);
+  flags |= GST_PLAY_FLAG_VIDEO | GST_PLAY_FLAG_AUDIO;
+  flags &= ~GST_PLAY_FLAG_TEXT;
+g_object_set (data.playbin, "flags", flags, NULL);
+	→ Activation de l'audio et de la vidéo, mais pas des sous-titres.
+C/
+gst_bus_add_watch (bus, (GstBusFunc)handle_message, &data);
+	→ Manière asynchrone de récupérer les messages du bus du pipeline.
+
+d/ spécifique glib
+g_io_add_watch (io_stdin, G_IO_IN, (GIOFunc)handle_keyboard, &data);
+	→ chopper les évènements de stdin.
+
+e/ gmainloop
+Requis par gst_bus_add_watch(…) (et g_io_add_watch)
+
+F/ analyze_streams() appelée par handle_message() lors d'un STATE_CHANGED
+⋅ g_object_get (data->playbin, "n-video", &data->n_video, NULL);
+	→ On récupère les infos contenue dans le flux analysé par la source de playbin. (get("n-video"…))
+
+⋅ g_signal_emit_by_name (data->playbin, "get-video-tags", i, &taglist);
+	→ On émet un signal de type Action (voir glib) qui est donc une sorte de fonction à appeler et qui renvoie le GstTagList associé au flux (les metadata).
+
+⋅ gst_tag_list_get_[string](tags, GST_TAG_[AUDIO_CODEC], &str)
+	→ Récupération des métadonnés.
+
+⋅ g_object_get(data->playbin, "current-[video]", &data->current_…, NULL);
+	→ trivial
+
+G/ handle_keyboard()
+⋅ g_object_set(data->playbin, "current-audio", index, NULL);
+	→ voir g_io_channel_read_line() pour la réception d'une ligne de texte.
+
+
+II) playback_2.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Support avancé des sous-titres
+
+III)
