@@ -1,12 +1,14 @@
 		GStreamer Basics
 		¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
-Basé sur les tutos de http://docs.gstreamer.com/ de gstreamer VERSION 0.10
+Basé sur les tutos de gstreamer (http://docs.gstreamer.com) VERSION 0.10
 http://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/gstreamer-0.10/libgstreamer.html
-Implémentation dans ~/TMP/GStreamer/ (temporaire) /!\ VERSION 1.0
+/!\ Implémentation en VERSION 1.0
 
-I) hello.c: ⇒ donne qqch d'équivalent à gst-launch-*
+I) hello.c:
 ¯¯¯¯¯¯¯¯¯¯
+http://docs.gstreamer.com/pages/viewpage.action?pageId=327735
+
 Un pipeline:
 	Ensemble d'objets ordonnés-chaînés qui débute par des sources (producteurs de données) et se termine par des “sinks” (consommateurs des données).
 	Entre ces 2 extrémités, on peut avoir des filtres, des démuxers…
@@ -17,16 +19,16 @@ gst_init (&argc, &argv);
 
 B/
 GstElement *pipeline = gst_parse_launch("playbin[2] uri=[proto]://[path]", NULL);
-	→ Crée un pipeline tout-en-un de type playbin (resp. playbin2) ⇒ playbin2 ne marche pas avec mon Gtreamer-1.0 au moment d'écrire ce tuto.
+	→ Crée un pipeline tout-en-un de type playbin (resp. playbin2 en 0.10)
 
 C/
 gst_element_set_state(pipeline, GST_STATE_PLAYING);
 return {GST_STATE_CHANGE_FAILURE, GST_STATE_CHANGE_SUCCESS, GST_STATE_CHANGE_ASYNC, GST_STATE_CHANGE_NO_PREROLL}
-	→ Change l'état du pipeline qui tourne dans un autre thread.
+	→ Change l'état du pipeline qui est exécuté dans un autre thread.
 GST_STATE_VOID_PENDING → GST_STATE_NULL → GST_STATE_READY → GST_STATE_PAUSED → GST_STATE_PLAYING
 
 D/
-GstBus *bus = gst_element_get_bus (pipeline);
+GstBus *bus = gst_element_get_bus(pipeline);
 	→ Récupère le bus de messages générés par le pipeline (car autre thread)
 
 E/
@@ -35,7 +37,8 @@ GstMessage *msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESS
 
 II) concept.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯
-http://docs.gstreamer.com/display/GstSDK/Basic+tutorial+3%3A+Dynamic+pipelines
+http://docs.gstreamer.com/display/GstSDK/Basic+tutorial+2%3A+GStreamer+concepts
+
  Qu'est-ce qu'un GstElement?
  Comment connecter les éléments entre eux ?
  Comment adapter le comportement d'un élément ?
@@ -44,12 +47,14 @@ http://docs.gstreamer.com/display/GstSDK/Basic+tutorial+3%3A+Dynamic+pipelines
 A/
 GstElement *source = gst_element_factory_make("videotestsrc", "la source");
 GstElement *sink = gst_element_factory_make("autovideosink", "le sink");
-	→ On crée 2 objets pour constituer notre pipeline. Le nom donné en 2ième paramètre permet de retrouver cet élément si on a perdu le pointeur et le 1er param. est le type d'objet:
+	→ On crée 2 objets pour constituer notre pipeline.
+	Le nom donné en 2ième paramètre permet de retrouver cet élément si on a perdu le pointeur et le 1er param. est le type d'objet:
 	"videotestsrc" est une source video.
-	"autovideosink" est un «sink» qui choisi la méthode la  mieux adaptée à notre système → indépendance de la plateforme.
+	"autovideosink" est un «sink» qui choisi la méthode la mieux adaptée à notre système → indépendance de la plateforme.
 
 B/
 GstElement *pipeline = gst_pipeline_new ("test-pipeline");
+
 C/
 gst_bin_add_many(GST_BIN (pipeline), sink, source, NULL);
 	→ Un pipeline est un conteneur (GstBin) qui permet la synchro de tous les éléments qu'il contient. Il est donc essentiel. L'ordre n'a pas d'importance ici.
