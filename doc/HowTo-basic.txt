@@ -32,7 +32,7 @@ GstBus *bus = gst_element_get_bus(pipeline);
 	→ Récupère le bus de messages générés par le pipeline (car autre thread)
 
 E/
-GstMessage *msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
 	→ Récupération synchrone des messages: bloque à l'infini (GST_CLOCK_TIME_NONE) tant qu'on ne reçoit ni erreur, ni EOS.
 
 II) concept.c:
@@ -48,23 +48,24 @@ A/
 GstElement *source = gst_element_factory_make("videotestsrc", "la source");
 GstElement *sink = gst_element_factory_make("autovideosink", "le sink");
 	→ On crée 2 objets pour constituer notre pipeline.
-	Le nom donné en 2ième paramètre permet de retrouver cet élément si on a perdu le pointeur et le 1er param. est le type d'objet:
-	"videotestsrc" est une source video.
-	"autovideosink" est un «sink» qui choisi la méthode la mieux adaptée à notre système → indépendance de la plateforme.
+	  Le nom donné en 2ième paramètre permet de retrouver cet élément si on a perdu le pointeur et le 1er param. est le type d'objet:
+	  "videotestsrc" est une source video.
+	  "autovideosink" est un «sink» qui choisi la méthode la mieux adaptée à notre système → indépendance de la plateforme.
 
 B/
-GstElement *pipeline = gst_pipeline_new ("test-pipeline");
+GstElement *pipeline = gst_pipeline_new("test-pipeline");
 
 C/
 gst_bin_add_many(GST_BIN (pipeline), sink, source, NULL);
 	→ Un pipeline est un conteneur (GstBin) qui permet la synchro de tous les éléments qu'il contient. Il est donc essentiel. L'ordre n'a pas d'importance ici.
 
 D/
-gboolean gst_element_link (source, sink);
-	→ Lie la source VERS le sink. Ils doivent être dans le même GstBin. L'ordre est crucial ici.
+gboolean gst_element_link(source, sink);
+	→ Lie la source VERS le sink. Ils doivent être dans le même GstBin.
+	  L'ordre est crucial ici.
 
 E/
-g_object_set (source, "pattern1", val1, "pattern2", val2, NULL);
+g_object_set(source, "pattern1", val1, "pattern2", val2, NULL);
 	→ Les GstElement sont des GObject, on peut dont les manipuler comme ça.
 	  Voir les propriétés de “videotestsrc”.
 	  Rq: gst-inspect [élément-name] permet d'inspecter les propriétés de tous les éléments, ou d'un en particulier.
@@ -84,17 +85,17 @@ if (msg != NULL) {
         fprintf(stderr, "Debugging info: %s\n",
 		debug_info ? debug_info : "none");
         g_clear_error (&err);
-        g_free (debug_info);
+        g_free(debug_info);
         break;
       case GST_MESSAGE_EOS:
-        g_print ("End-Of-Stream reached.\n");
+        g_print("End-Of-Stream reached.\n");
         break;
       default:
         /* We should not reach here because we only asked for ERRORs and EOS */
         fprintf(stderr, "Unexpected message received.\n");
         break;
     }
-    gst_message_unref (msg);
+    gst_message_unref(msg);
 }
 
 	→ Les GstMessage sont des structures assez complexes qui ne se manipulent qu'avec des macros comme GST_MESSAGE_TYPE(msg), GST_OBJECT_NAME(msg->src)
