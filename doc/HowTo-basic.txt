@@ -127,7 +127,7 @@ g_signal_connect(data.source, "pad-added", G_CALLBACK (pad_added_handler), &data
 E/ Callback pad_added_handler()
 ⋅Récupérer le sink pad du convert ET vérifier qu'il n'est pas déjà lié
 ⋅Récupérer les aptitudes du pad reçu (gst_pad_query_caps ⇒ gst_caps_get_structure ⇒ gst_structure_get_name (donne le mime-type)) pour vérifier ce qu'on reçoit et aviser du traitement à effectuer
-⋅gst_pad_link (new_pad, sink_pad);
+⋅gst_pad_link(new_pad, sink_pad);
 	→ Créer le lien souhaité, les 2 pads doivent être contenus dans le même bin.
 
 ** Voir I) et II) de HowTo-PLayback.txt **
