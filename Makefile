@@ -1,5 +1,5 @@
-EXE = hello concepts dynamic_pipeline time_management playback_speed \
-	dynamic_pipeline-2 playback_[1-9]
+EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
+	basic-3b_dynamic_pipelines
 
 CC = gcc
 
