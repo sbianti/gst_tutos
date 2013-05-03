@@ -137,7 +137,6 @@ static gboolean handle_keyboard(GIOChannel *source, GIOCondition cond,
     if (index < 0 || index >= data->n_audio) {
       g_printerr("Index out of bounds\n");
     } else {
-      /* If the input was a valid audio stream index, set the current audio stream */
       g_print("Setting current audio stream to %d\n", index);
       g_object_set(data->playbin, "current-audio", index, NULL);
     }
@@ -182,7 +181,6 @@ int main(int argc, char *argv[]) {
   bus = gst_element_get_bus(data.playbin);
   gst_bus_add_watch(bus, (GstBusFunc)handle_message, &data);
 
-  /* Add a keyboard watch so we get notified of keystrokes */
 #ifdef _WIN32
   io_stdin = g_io_channel_win32_new_fd(fileno(stdin));
 #else
@@ -190,7 +188,6 @@ int main(int argc, char *argv[]) {
 #endif
   g_io_add_watch(io_stdin, G_IO_IN, (GIOFunc)handle_keyboard, &data);
 
-  /* Start playing */
   ret = gst_element_set_state(data.playbin, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE) {
     g_printerr("Unable to set the pipeline to the playing state.\n");
@@ -198,11 +195,9 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  /* Create a GLib Main Loop and set it to run */
   data.main_loop = g_main_loop_new(NULL, FALSE);
   g_main_loop_run(data.main_loop);
 
-  /* Free resources */
   g_main_loop_unref(data.main_loop);
   g_io_channel_unref(io_stdin);
   gst_object_unref(bus);
