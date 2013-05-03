@@ -132,20 +132,28 @@ E/ Callback pad_added_handler()
 
 ** Voir I) et II) de HowTo-PLayback.txt **
 
-IV) time_management.c:
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+IV) basic-4_time_management.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  Recueillir des infos du pipeline ⇒ cela requiert l'utilisation de GstQuery.
  Se déplacer dans le stream en live.
 
 A/
 msg = gst_bus_timed_pop_filtered(bus, 100 * GST_MSECOND,
 			GST_MESSAGE_STATE_CHANGED | _ERROR | _EOS | _DURATION);
-
-gst_element_query_position(pipeline, …);
-gst_element_query_duration(pipeline, …);
+ ____________________________________________________________
+|Utilisation des gst_query:                                  |
+|	gst_element_query_position(pipeline, format, &pos);  |
+|	gst_element_query_duration(pipeline, format, &durée);|
+|
+|	ou:
+|	query = gst_query_new_seeking(TYPE)                  |
+|	if (gst_element_query(pipeline, query))		     |
+|	   gst_query_parse_seeking(query…)		     |
+|	gst_query_unref(query);				     |
+ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 	→ On poll le bus en sortant tous les 100⋅10¯³ secondes
 	  Si on est «PLAYING», on rafraichie notre UI.
-	  rq: ici GstElement fournie de quoi récupérer les bonnes infos sans passer par des GstQuery.
+	  rq: ici GstElement fournie de quoi récupérer les bonnes infos sans passer par des GstQuery (&pos et &durée de l'exemple).
 
 B/
 g_print ("Position %" GST_TIME_FORMAT " / %" GST_TIME_FORMAT "\r",
@@ -159,7 +167,7 @@ gst_element_seek_simple(data.playbin, GST_FORMAT_TIME,
 	→ Un seek «simple»: TIME → not byte; FLUSH → vire toutes les données déjà dans le pipeline, KEY_UNIT → va à la trame clef la plus proche et consomme directement les données (sinon, progresse à l'[octet/tps] qui correspond au seek puis consomme les données);
 
 D/ handle_message()
-case GST_MESSAGE_DURATION:
+case GST_MESSAGE_DURATION_CHANGED:
 	data->duration = GST_CLOCK_TIME_NONE;
 	→ La durée d'un stream peut changer en cours de lecture: on peut soit la changer ici, soit la mettre invalide et la changer dans le polling du bus.
 

@@ -1,5 +1,5 @@
 EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
-	basic-3b_dynamic_pipelines
+	basic-3b_dynamic_pipelines basic-4_time_management
 
 CC = gcc
 
