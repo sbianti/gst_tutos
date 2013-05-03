@@ -5,7 +5,7 @@ http://docs.gstreamer.com/display/GstSDK/Playback+tutorial+1%3A+Playbin2+usage
 I) playback-1.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 ⋅ Utilisation + approfondie de playbin.
-⋅ Récupération de la liste des métadata.
+⋅ Récupération de la liste des metadata.
 C'est un plugin, donc certains objets ne sont pas accessibles depuis core.
 Il faudra parfois les redéclarer (ex: GST_PLAY_FLAG_[VIDEO|AUDIO|TEXT]).
 
