@@ -1,0 +1,30 @@
+		Gstreamer 1.0 -- résumer
+		¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+Tout est GstElement:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Pour obtenir de l'info sur un élément:
+     $ gst-inspect «élément»
+
+Ce sont des GObject, donc:
+   G_OBJECT_GET(…) et _SET(…) pour manipuler ses propriétés.
+[→ section “Element Properties” dans gst-inspect]
+
+   g_signal_connect(element, "signal", G_CALLBACK(callback), …)
+[→ section “Element Signals”]
+
+   g_signal_emit_by_name(element, "Action", …) pour appeler d'autres propriétés.
+[→ section “Element Actions”]
+
+Mais toutes les infos du stream ne sont pas disponibles par les propriétés de l'objet.
+Il faut alors recourir à des requêtes d'un autre type: les “gst_query”.
+
+
+Le pipeline, le flow:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Le pipeline, élément central du déroulement d'un processus multimédia passe par les états suivant:
+GST_STATE_VOID_PENDING → GST_STATE_NULL
+		       → GST_STATE_READY → GST_STATE_PAUSED → GST_STATE_PLAYING
+
+Certaines opérations ne sont possible que dans un certain état.
+Penser à vérifier l'état avant d'agir.
