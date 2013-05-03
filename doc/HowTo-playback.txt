@@ -2,8 +2,8 @@
 		¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 http://docs.gstreamer.com/display/GstSDK/Playback+tutorial+1%3A+Playbin2+usage
 
-I) playback-1.c:
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+I) playback-1_playbin.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 ⋅ Utilisation + approfondie de playbin.
 ⋅ Récupération de la liste des metadata.
 C'est un plugin, donc certains objets ne sont pas accessibles depuis core.
@@ -48,8 +48,10 @@ G/ handle_keyboard()
 	→ voir g_io_channel_read_line() pour la réception d'une ligne de texte.
 
 
-II) playback_2.c:
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-Support avancé des sous-titres
+II) playback-2_sub-management.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+⋅ Similaire à playback-1, mais avec gestion des sous-titres.
+⇒ Semble y avoir un bug lorsqu'on charge un sous-titre en plus :
+  lorsqu'on change de sous-titre, plus rien n'est affiché.
 
 III)
