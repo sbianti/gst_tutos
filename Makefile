@@ -1,5 +1,5 @@
 EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
-	basic-3b_dynamic_pipelines basic-4_time_management
+	basic-3b_dynamic_pipelines basic-4_time_management basic-5_gui_toolkit
 
 CC = gcc
 
@@ -27,8 +27,8 @@ endif
 all:
 	@echo entrez un nom de programme à compiler \(sans l\'extension\)
 
-gui_toolkit : CFLAGS += $(CFLAGS_GTK)
-gui_toolkit : LDFLAGS += $(LDFLAGS_GTK) $(LDFLAGS_GST_INTERFACES_$(GST_VERSION))
+basic-5_gui_toolkit : CFLAGS += $(CFLAGS_GTK)
+basic-5_gui_toolkit : LDFLAGS += $(LDFLAGS_GTK) $(LDFLAGS_GST_INTERFACES_$(GST_VERSION))
 
 .PHONY : clean
 clean:
