@@ -19,6 +19,7 @@ g_object_get(data.playbin, "flags", &flags, NULL);
   flags &= ~GST_PLAY_FLAG_TEXT;
 g_object_set(data.playbin, "flags", flags, NULL); 
 	→ Activation de l'audio et de la vidéo, mais pas des sous-titres.
+
 C/
 gst_bus_add_watch(bus, (GstBusFunc)handle_message, &data);
 	→ Manière asynchrone de récupérer les messages du bus du pipeline.
