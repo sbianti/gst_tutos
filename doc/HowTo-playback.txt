@@ -11,7 +11,7 @@ Il faudra parfois les redéclarer (ex: GST_PLAY_FLAG_[VIDEO|AUDIO|TEXT]).
 
 A/
 data.playbin = gst_element_factory_make("playbin", "el playbin");
-	→ Une autre façon de créer un pipeline (gst_parse_launch dans hello.c in HowTo-basics.txt)
+	→ Une autre façon de créer un pipeline (gst_parse_launch dans basic-1_hello.c cf. HowTo-basics.txt)
 
 B/
 g_object_get(data.playbin, "flags", &flags, NULL);
@@ -32,7 +32,7 @@ e/ gmainloop
 Requis par gst_bus_add_watch(…) (et g_io_add_watch)
 
 F/ analyze_streams() appelée par handle_message() lors d'un STATE_CHANGED
-⋅ g_object_get (data->playbin, "n-video", &data->n_video, NULL);
+⋅ g_object_get(data->playbin, "n-video", &data->n_video, NULL);
 	→ On récupère les infos contenue dans le flux analysé par la source de playbin. (get("n-video"…))
 
 ⋅ g_signal_emit_by_name(data->playbin, "get-video-tags", i, &taglist);
