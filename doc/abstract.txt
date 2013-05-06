@@ -28,3 +28,51 @@ GST_STATE_VOID_PENDING → GST_STATE_NULL
 
 Certaines opérations ne sont possible que dans un certain état.
 Penser à vérifier l'état avant d'agir.
+
+
+Les messages:
+¯¯¯¯¯¯¯¯¯¯¯¯
+GstMessage, ils contiennent une GstStructure permettant de créer de nombreux type de messages sans avoir à réécrire l'API.
+Ils sont postés par les GstObject dans le pipeline. Les applications peuvent les récupérer via le GstBus.
+[code]
+	gst_bus_post(bus, gst_message_new_eos());
+[/code]
+
+
+Les bus:
+¯¯¯¯¯¯¯
+Il y en a un par objet.
+[code]
+	GstBus *bus = gst_element_get_bus(élément);
+[/code]
+
+Ils permettent de recueillir les messages de ces objets.
+
+ ⋅Synchrone:
+  ¯¯¯¯¯¯¯¯¯
+[code]
+	GstMessage *msg = gst_bus_timed_pop_filtered(bus, …);
+
+	if (msg != NULL) {
+	   switch(msg) {
+	     case GST_MESSAGE_EOS:
+	   … …
+	}
+[/code]
+
+ ⋅Asynchrone:
+  ¯¯¯¯¯¯¯¯¯¯
+[code]
+	gst_bus_add_watch(bus, (GstBusFunc)handler, …);
+	⇒ /!\ Il faut une mainloop /!\
+[/code]
+
+ ⋅Asynchrone en filtrant les messages:
+  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+[code]
+	gst_bus_add_signal_watch(bus);
+	⇒ /!\ Il faut une mainloop /!\
+
+	g_signal_connect(G_OBJECT(bus), "message::<nom du message>",
+			 (GCallback)message_cb, &data);
+[/code]
