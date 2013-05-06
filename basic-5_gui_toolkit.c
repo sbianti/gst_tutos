@@ -32,15 +32,20 @@ typedef struct _CustomData {
   gint64 duration;
 } CustomData;
 
-/* This function is called when the GUI toolkit creates the physical window that will hold the video.
- * At this point we can retrieve its handler (which has a different meaning depending on the windowing system)
- * and pass it to GStreamer through the XOverlay interface. */
-static void realize_cb(GtkWidget *widget, CustomData *data) {
+/****************************************************************************/
+/* This function is called when the GUI toolkit creates the physical window */
+/* that will hold the video.						    */
+/* At this point we can retrieve its handler (which has a different meaning */
+/* depending on the windowing system) and pass it to GStreamer through	    */
+/* the XOverlay interface.						    */
+/****************************************************************************/
+static void realize_cb(GtkWidget *widget, CustomData *data)
+{
   GdkWindow *window = gtk_widget_get_window(widget);
   guintptr window_handle;
 
   if (!gdk_window_ensure_native(window))
-    g_error("Couldn't create native window needed for GstXOverlay!");
+    g_error("Couldn't create native window needed for Gst<?>Overlay!");
 
 #if defined (GDK_WINDOWING_WIN32)
   window_handle = (guintptr)GDK_WINDOW_HWND(window);
@@ -58,30 +63,41 @@ static void realize_cb(GtkWidget *widget, CustomData *data) {
 #endif
 }
 
-static void play_cb(GtkButton *button, CustomData *data) {
+static void play_cb(GtkButton *button, CustomData *data)
+{
   gst_element_set_state(data->playbin, GST_STATE_PLAYING);
 }
 
-static void pause_cb(GtkButton *button, CustomData *data) {
+static void pause_cb(GtkButton *button, CustomData *data)
+{
   gst_element_set_state(data->playbin, GST_STATE_PAUSED);
 }
 
-static void stop_cb(GtkButton *button, CustomData *data) {
+static void stop_cb(GtkButton *button, CustomData *data)
+{
   gst_element_set_state(data->playbin, GST_STATE_READY);
 }
 
-static void delete_event_cb(GtkWidget *widget, GdkEvent *event, CustomData *data) {
+static void delete_event_cb(GtkWidget *widget, GdkEvent *event,
+			    CustomData *data)
+{
   stop_cb(NULL, data);
   gtk_main_quit();
 }
 
-static gboolean expose_cb(GtkWidget *widget, GdkEventExpose *event, CustomData *data) {
+static gboolean expose_cb(GtkWidget *widget, GdkEventExpose *event,
+			  CustomData *data)
+{
   if (data->state < GST_STATE_PAUSED) {
     GtkAllocation allocation;
     GdkWindow *window = gtk_widget_get_window(widget);
     cairo_t *cr;
-    /* Cairo is a 2D graphics library which we use here to clean the video window.
-     * It is used by GStreamer for other reasons, so it will always be available to us. */
+ /***********************************************************************/
+ /* Cairo is a 2D graphics library which we use here to clean the video */
+ /* window.							        */
+ /* It is used by GStreamer for other reasons, so it will always be     */
+ /* available to us.						        */
+ /***********************************************************************/
     gtk_widget_get_allocation(widget, &allocation);
     cr = gdk_cairo_create(window);
     cairo_set_source_rgb(cr, 0, 0, 0);
@@ -93,7 +109,8 @@ static gboolean expose_cb(GtkWidget *widget, GdkEventExpose *event, CustomData *
   return FALSE;
 }
 
-static void slider_cb(GtkRange *range, CustomData *data) {
+static void slider_cb(GtkRange *range, CustomData *data)
+{
   gdouble value = gtk_range_get_value(GTK_RANGE(data->slider));
   printf("seek to %.2fs\n", value);
   gst_element_seek_simple(data->playbin, GST_FORMAT_TIME,
@@ -101,7 +118,8 @@ static void slider_cb(GtkRange *range, CustomData *data) {
 			  (gint64)(value * GST_SECOND));
 }
 
-static void create_ui(CustomData *data) {
+static void create_ui(CustomData *data)
+{
   GtkWidget *main_window;
   GtkWidget *video_window;
   GtkWidget *main_box;
@@ -110,7 +128,8 @@ static void create_ui(CustomData *data) {
   GtkWidget *play_button, *pause_button, *stop_button;
 
   main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  g_signal_connect(G_OBJECT(main_window), "delete-event", G_CALLBACK(delete_event_cb), data);
+  g_signal_connect(G_OBJECT(main_window), "delete-event",
+		   G_CALLBACK(delete_event_cb), data);
 
   video_window = gtk_drawing_area_new();
   gtk_widget_set_double_buffered(video_window, FALSE);
@@ -125,7 +144,8 @@ static void create_ui(CustomData *data) {
   g_signal_connect(G_OBJECT(play_button), "clicked", G_CALLBACK(play_cb), data);
 
   pause_button = gtk_button_new_from_stock(GTK_STOCK_MEDIA_PAUSE);
-  g_signal_connect(G_OBJECT(pause_button), "clicked", G_CALLBACK(pause_cb), data);
+  g_signal_connect(G_OBJECT(pause_button), "clicked",
+		   G_CALLBACK(pause_cb), data);
 
   stop_button = gtk_button_new_from_stock(GTK_STOCK_MEDIA_STOP);
   g_signal_connect(G_OBJECT(stop_button), "clicked", G_CALLBACK(stop_cb), data);
@@ -169,7 +189,8 @@ static inline void refresh_slider(CustomData *data, GstFormat fmt)
   }
 }
 
-static gboolean refresh_ui(CustomData *data) {
+static gboolean refresh_ui(CustomData *data)
+{
   GstFormat fmt = GST_FORMAT_TIME;
 
   if (data->state < GST_STATE_PLAYING)
@@ -192,17 +213,21 @@ static gboolean refresh_ui(CustomData *data) {
 
 static void tags_cb(GstElement *playbin, gint stream, CustomData *data)
 {
-  gst_element_post_message(playbin,
-			   gst_message_new_application(GST_OBJECT(playbin),
-						       gst_structure_new("tags-changed", NULL)));
+  GstMessage* message =
+    gst_message_new_application(GST_OBJECT(playbin),
+				gst_structure_new("tags-changed", NULL));
+
+  gst_element_post_message(playbin, message);
 }
 
-static void error_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
+static void error_cb(GstBus *bus, GstMessage *msg, CustomData *data)
+{
   GError *err;
   gchar *debug_info;
 
   gst_message_parse_error(msg, &err, &debug_info);
-  g_printerr("Error received from element %s: %s\n", GST_OBJECT_NAME(msg->src), err->message);
+  g_printerr("Error received from element %s: %s\n",
+	     GST_OBJECT_NAME(msg->src), err->message);
   g_printerr("Debugging information: %s\n", debug_info ? debug_info : "none");
   g_clear_error(&err);
   g_free(debug_info);
@@ -210,12 +235,14 @@ static void error_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
   gst_element_set_state(data->playbin, GST_STATE_READY);
 }
 
-static void eos_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
+static void eos_cb(GstBus *bus, GstMessage *msg, CustomData *data)
+{
   g_print("End-Of-Stream reached.\n");
   gst_element_set_state(data->playbin, GST_STATE_READY);
 }
 
-static void state_changed_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
+static void state_changed_cb(GstBus *bus, GstMessage *msg, CustomData *data)
+{
   GstState old_state, new_state, pending_state;
 
   gst_message_parse_state_changed(msg, &old_state, &new_state, &pending_state);
@@ -229,7 +256,8 @@ static void state_changed_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
   }
 }
 
-static void analyze_streams(CustomData *data) {
+static void analyze_streams(CustomData *data)
+{
   gint i;
   GstTagList *tags;
   gchar *str, *total_str;
@@ -309,7 +337,8 @@ static void analyze_streams(CustomData *data) {
   }
 }
 
-static void application_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
+static void application_cb(GstBus *bus, GstMessage *msg, CustomData *data)
+{
 #if GST_VERSION_MAJOR == 0
 #define MSG_STR msg->structure
 #else
@@ -320,7 +349,8 @@ static void application_cb(GstBus *bus, GstMessage *msg, CustomData *data) {
   }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   CustomData data;
   GstStateChangeReturn ret;
   GstBus *bus;

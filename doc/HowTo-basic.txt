@@ -185,30 +185,33 @@ V) gui_toolkit.c:
  Comment mettre à jour une UI à partir des infos de GStreamer.
  Comment ne recevoir que les messages qui nous intéressent.
 
- Généralement, les “sink” implémentent l'interface XOverlay (GObject interface) qui permet de spécifier la fenêtre où envoyer la vidéo au lieu d'en créer une exprès ; Il suffit par exemple de (pseudo-code):
+ Généralement, les “sink” implémentent l'interface GstVideoOverlay (GstXOverlay en 0.10). C'est une «GObject interface» qui permet de spécifier la fenêtre où envoyer la vidéo au lieu d'en créer une exprès ; Il suffit par exemple de (pseudo-code):
 	OVERLAY_CAST(mon_sink)->set_handle_window(…)
- et ça marche. Cependant, playbin, en tant que pipeline qui fait le café, fournie des fonctions qui vont bien (et ce, pour les nombreuses interfaces qu'il implémente)
+ et ça marche. Cependant, playbin, en tant que pipeline qui fait le café, fournie des fonctions qui vont bien (et ce, pour les nombreuses interfaces qu'il implémente).
+
+ Dans cet exemple, on récupère la fenêtre créée par Gtk, et on l'applique à playbin.
+ La vidéo s'affiche alors dans la Gtkwindow.
 
 A/
 #if defined (GDK_WINDOWING_X11)
 #include <gdk/gdkx.h>
-	→ Pour des raisons de portabilité, gdk fourni plusieurs entêtes différentes pour gérer l'affichage
+	→ Pour des raisons de portabilité, gdk fourni plusieurs entêtes différents pour gérer l'affichage.
 
 B/
-g_signal_connect(G_OBJECT(data.playbin), "[video audio text]-tags-changed",
+g_signal_connect(G_OBJECT(data.playbin), "[video|audio|text]-tags-changed",
 		 (GCallback) tags_cb, &data);
 	→ Être notifié des méta-données qui arrivent sur le stream avec :
 void tags_cb(GstElement *ppl, gint stream, CustomData *data) qui fait
 	gst_element_post_message(ppl,
 		gst_message_new_application((GST_OBJECT(ppl),
 			gst_structure_new("tags-changed", NULL))))
-	→ Si n'est pas dans le thread ppal, une modification des widgets Gtk est impossible, on doit donc informer le thread principal.
+	→ Si on n'est pas dans le thread ppal, une modification des widgets Gtk est impossible, on doit donc informer le thread principal.
 	 Ceci est une manière de faire différente de playback_1 où on récupère les méta-données lorsqu'on passe en STATE_PAUSED.
 
 C/
 gst_bus_add_signal_watch(bus);
 g_signal_connect(G_OBJECT(bus), "message::<nom du message>",
-		(GCallback)error_cb, &data);
+		(GCallback)message_cb, &data);
 	→ gst_bus_add_watch() permettait de récupérer tous les messages, ici, on sélectionne ceux qu'on veut traiter. Dans tout les cas, il faut une mainloop.
 	 Elle est ici créée par gtk_main().
 
@@ -229,24 +232,25 @@ GdkWindow *window = …
 gst_[x|video]_overlay_set_window_handle(GST_[X|VIDEO]_OVERLAY(pipeline),
 				      window_handle);
 	→ API dépendante de la version de GStreamer.
-	  On ne peut faire ça que lorsqu'on reçoit le «realize event»  avant, la fenêtre n'est pas réalisée et gdk_window_ensure_native (window) échoue.
-
+	  On ne peut faire ça que lorsqu'on reçoit le «realize event».
+	  Avant, la fenêtre n'est pas réalisée et gdk_window_ensure_native(win) échoue.
 
 G/ Expose event
- Il faut le gérer que lorsqu'on est < STATE_PAUSED. Les “sink” gèrent le rafraichissement lorsqu'on est PLAYING ou PAUSED (on dit qu'il y a un flux de données dans les 2 cas).
+ Il ne faut le gérer que lorsqu'on est < STATE_PAUSED.
+ Les “sink” gèrent le rafraichissement lorsqu'on est PLAYING ou PAUSED (on dit qu'il y a un flux de données dans les 2 cas).
 
 E/ callback du slider ⇒ évident
 	On pourrait ajouter une gestion plus fine du déplacement, genre tous les 0,3s max… dans cette implémentation, il se peut qu'un déplacement ne soit pas terminé lorsqu'un autre est demandé.
 
 F/ callback refresh_ui & refresh_slider
  Faire avancer le slider si on est PLAYING /!!\ ou si on vient de passer en PAUSED
- Ici, on vérifie aussi si on la durée du fichier.
+ Ici, on vérifie aussi si on a la durée du fichier.
 	→ Ça pourrait être fait en passant en PAUSED la première fois ⇒ oui, mais un stream met souvent à jour cette info, il est donc mieux recueillir cette info à tout les coups.
-	→ Est-ce que de nouvelle méta-données peuvent arriver dans un fichier sur disque ? ⇒ oui si c'est un dump de stream, sinon ?…
+	→ Est-ce que de nouvelles méta-données peuvent arriver dans un fichier sur disque ? ⇒ oui si c'est un dump de stream, sinon ?…
  On désactive “value-changed” au moment de bouger le curseur, sinon on va appeler slider_cb()
 
 G/ tags_cb
- Elle est appelée lorsque des méta-données arrivent dans le flux. Elle estr donc appelée dans un thread du pipeline, donc ce n'est pas le principal.
+ Elle est appelée lorsque des méta-données arrivent dans le flux. Elle est donc appelée dans un thread du pipeline, donc ce n'est pas le principal.
  On ne peut donc pas mettre à jour un composant de Gtk depuis cette fonction.
  Pour cela, on poste un message sur le bus du pipeline qui est écouté par le thread ppal.
 gst_element_post_message(pipeline, GstMessage* m);
