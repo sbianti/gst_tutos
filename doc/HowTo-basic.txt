@@ -179,8 +179,8 @@ if (data->playing) {
 	→ Les requêtes de tout ordres marchent mieux en PAUSED voir en PLAYING.
 	  On crée une requête de type {seek, TIME} et on la passe au pipeline.
 
-V) gui_toolkit.c:
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+V) basic-5_gui_toolkit.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  Comment afficher la vidéo dans une fenêtre particulière ?
  Comment mettre à jour une UI à partir des infos de GStreamer.
  Comment ne recevoir que les messages qui nous intéressent.
@@ -258,23 +258,22 @@ gst_element_post_message(pipeline, GstMessage* m);
 					gst_structure_new("tags-changed", NULL))
 	→ cela crée un type de message réservé aux applis (Gstreamer n'en fera rien), accompagné de l'information name="tags-changed".
 
-VI) formats_and_pad_caps.c:
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+VI) basic-6_media-format_and_pad-caps.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  Que sont les capacités d'un Pad ?
  Comment et quand les récupérer ?
  Pourquoi les connaître ?
 
 Les pads permettent de faire entrer et sortir des infos des éléments.
 Les capacités (caps) décrivent la nature des infos qui transitent par eux (vidéo RGB en 320×200 à 30 fps ; X264 en … à …)
-Un pad peu supporter plusieurs capacités qui peuvent en plus avoir des ranges (audio de 1 à 48000 Hz).
+Un pad peut supporter plusieurs capacités qui peuvent en plus avoir des ranges (audio de 1 à 48000 Hz).
 Cependant, à un moment donné les infos qui transitent d'un pad à un autre doivent avoir un seul type.
-Lorsqu'on lie 2 pads, une négociation aboutie au choix d'un type de capacités communes et à valeur fixe (pas de range).
-C'est pourquoi il faut connaître les pad-caps des éléments qu'on utilise (cela parmet de comprendre pourquoi une négociation échoue).
+Lorsqu'on lie 2 pads, une négociation aboutie au choix d'un type de capacités communes et à valeur fixe (pas de range), c'est pourquoi il faut connaître les pad-caps des éléments qu'on utilise (cela permet de comprendre pourquoi une négociation échoue).
 
 ⋅ Les schémas de connecteurs (pad templates):
   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 Ce sont eux qui permettent d'instancier des connecteurs.
-Exemple de sink templates pour un objet audio sink et une vidéo source:
+Exemple de sink pad templates pour un objet audio sink et une vidéo source:
 
 *********************************************
 SINK template: 'sink'
@@ -305,8 +304,8 @@ SRC template: 'src'
 
 Les […] sont des ranges et les {…} des listes.
 
-N.B: gst-inspect-0.10 permet d'avoir des infos sur les caps des éléments
-     Certains éléments questionnent les couches basses pour sélectionner les caps à offrir. Donc, celles-ci seront différentes celon l'état de l'élément (READY, PAUSED…)
+N.B: gst-inspect permet d'avoir des infos sur les caps des éléments
+     Certains éléments questionnent les couches basses pour sélectionner les caps à offrir. Donc, celles-ci seront différentes selon l'état de l'élément (READY, PAUSED…).
 
 Ce tuto instantie 2 éléments à partir de leur “fabrique”, affiche leur caps-template, les lie et met le pipeline à PLAYING. À chaque changement d'état, les caps des sink pads sont affichées pour montrer le processus de négociation.
 
