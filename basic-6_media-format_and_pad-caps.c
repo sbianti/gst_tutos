@@ -42,8 +42,8 @@ static void print_pad_templates_information(GstElementFactory *factory)
 #define NUMPADTEMPLATES(facto) facto->numpadtemplates
 #define STATICPADTEMPLATES(facto) facto->staticpadtemplates
 #else
-#define NUMPADTEMPLATES(facto) gst_element_factory_get_num_pad_templates(facto)
-#define STATICPADTEMPLATES(facto) gst_element_factory_get_static_pad_templates(facto)
+#define NUMPADTEMPLATES(f) gst_element_factory_get_num_pad_templates(f)
+#define STATICPADTEMPLATES(f) gst_element_factory_get_static_pad_templates(f)
 #endif
 
   g_print("Pad Templates for %s:\n",
@@ -125,6 +125,16 @@ int main(int argc, char *argv[])
   GstMessage *msg;
   GstStateChangeReturn ret;
   gboolean terminate = FALSE;
+  gint frequence;
+
+  if (argc < 2) {
+    g_printerr("No frequence arg: will be played with default frequence\n");
+    frequence = 0;
+  } else
+    frequence = atoi(argv[1]);
+
+  if (frequence < 0)
+    frequence = 0;
 
   gst_init(&argc, &argv);
 
@@ -162,10 +172,12 @@ int main(int argc, char *argv[])
   /* Pas de pad source et sink pour la source car ils sont créés à la volée: */
   /* print_pad_capabilities(source, "sink"); */
 
-  {
+  if (frequence > 0)
+    g_object_set(source, "freq", (gdouble)frequence, NULL);
+  else {
     gdouble freq;
     g_object_get(source, "freq", &freq, NULL);
-    printf("fréquence :%dHz\n", (int)freq);
+    printf("fréquence par défaut :%dHz\n", (int)freq);
   }
 
   ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);

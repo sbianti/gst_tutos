@@ -309,7 +309,7 @@ N.B: gst-inspect permet d'avoir des infos sur les caps des éléments
 
 Ce tuto instantie 2 éléments à partir de leur “fabrique”, affiche leur caps-template, les lie et met le pipeline à PLAYING. À chaque changement d'état, les caps des sink pads sont affichées pour montrer le processus de négociation.
 
-/* Explication du code */
+A/
 
 VII) multithreading_and_pad_availability.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯

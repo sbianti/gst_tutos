@@ -56,7 +56,7 @@ Ils permettent de recueillir les messages de ces objets.
 	if (msg != NULL) {
 	   switch(msg) {
 	     case GST_MESSAGE_EOS:
-	   … …
+	     …
 	}
 [/code]
 
