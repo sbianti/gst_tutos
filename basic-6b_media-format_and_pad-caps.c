@@ -10,7 +10,7 @@ static gboolean print_field(GQuark field, const GValue *value, gpointer pfx)
 {
   gchar *str = gst_value_serialize(value);
 
-  g_print("%s  %15s: %s\n", (gchar *) pfx, g_quark_to_string(field), str);
+  g_print("%s  %15s: %s\n", (gchar *)pfx, g_quark_to_string(field), str);
   g_free(str);
   return TRUE;
 }
@@ -47,8 +47,8 @@ static void print_pad_templates_information(GstElementFactory *factory)
 #define NUMPADTEMPLATES(facto) facto->numpadtemplates
 #define STATICPADTEMPLATES(facto) facto->staticpadtemplates
 #else
-#define NUMPADTEMPLATES(facto) gst_element_factory_get_num_pad_templates(facto)
-#define STATICPADTEMPLATES(facto) gst_element_factory_get_static_pad_templates(facto)
+#define NUMPADTEMPLATES(f) gst_element_factory_get_num_pad_templates(f)
+#define STATICPADTEMPLATES(f) gst_element_factory_get_static_pad_templates(f)
 #endif
 
   g_print("Pad Templates for %s:\n", gst_element_factory_get_longname(factory));
@@ -109,7 +109,6 @@ static void print_pad_capabilities(GstElement *element, gchar *pad_name)
     return;
   }
 
-  /* Retrieve negotiated caps (or acceptable caps if negotiation is not finished yet) */
   caps = GET_CURRENT_CAPS(pad);
   if (!caps) {
     g_print("BAD : Pad pas dispo tout de suite\n");

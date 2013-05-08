@@ -309,7 +309,13 @@ N.B: gst-inspect permet d'avoir des infos sur les caps des éléments
 
 Ce tuto instantie 2 éléments à partir de leur “fabrique”, affiche leur caps-template, les lie et met le pipeline à PLAYING. À chaque changement d'état, les caps des sink pads sont affichées pour montrer le processus de négociation.
 
-A/
+A/ print_pad_capabilities()
+gst_element_get_static_pad(élément, pad_name)
+	→ On récupère le pad «static» → ce sont les pad qui sont toujours disponibles.
+gst_pad_get_current_caps(pad), gst_pad_query_caps(pad, NULL)
+	→ On récupère le pad négocié, sinon, on se rabat sur toutes les capacités disponibles.
+
+Utilisation des GstElementFactory, GstStaticPadTemplate.
 
 VII) multithreading_and_pad_availability.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯

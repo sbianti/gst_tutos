@@ -1,16 +1,16 @@
 #include <gst/gst.h>
 #include <stdio.h>
 
-static gboolean print_field(GQuark field, const GValue * value, gpointer pfx)
+static gboolean print_field(GQuark field, const GValue *value, gpointer pfx)
 {
   gchar *str = gst_value_serialize(value);
 
-  g_print("%s  %15s: %s\n", (gchar *) pfx, g_quark_to_string(field), str);
+  g_print("%s  %15s: %s\n", (gchar *)pfx, g_quark_to_string(field), str);
   g_free(str);
   return TRUE;
 }
 
-static void print_caps(const GstCaps * caps, const gchar * pfx)
+static void print_caps(const GstCaps *caps, const gchar *pfx)
 {
   guint i;
 
@@ -46,9 +46,7 @@ static void print_pad_templates_information(GstElementFactory *factory)
 #define STATICPADTEMPLATES(f) gst_element_factory_get_static_pad_templates(f)
 #endif
 
-  g_print("Pad Templates for %s:\n",
-	  gst_element_factory_get_longname(factory));
-
+  g_print("Pad Templates for %s:\n", gst_element_factory_get_longname(factory));
   if (NUMPADTEMPLATES(factory) == 0) {
     g_print("  none\n");
     return;
@@ -103,7 +101,6 @@ static void print_pad_capabilities(GstElement *element, gchar *pad_name)
     return;
   }
 
-  /* Retrieve negotiated caps (or acceptable caps if negotiation is not finished yet) */
   caps = GET_CURRENT_CAPS(pad);
   if (!caps) {
     g_print("BAD : Pad pas dispo tout de suite\n");
@@ -177,7 +174,7 @@ int main(int argc, char *argv[])
   else {
     gdouble freq;
     g_object_get(source, "freq", &freq, NULL);
-    printf("fréquence par défaut :%dHz\n", (int)freq);
+    printf("fréquence par défaut : %dHz\n", (int)freq);
   }
 
   ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
@@ -232,7 +229,7 @@ int main(int argc, char *argv[])
       }
       gst_message_unref(msg);
     }
-  } while(!terminate);
+  } while (!terminate);
 
   gst_object_unref(bus);
   gst_element_set_state(pipeline, GST_STATE_NULL);
