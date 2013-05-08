@@ -5,6 +5,7 @@ Basé sur les tutos de gstreamer (http://docs.gstreamer.com) VERSION 0.10
 http://www.freedesktop.org/software/gstreamer-sdk/data/docs/2012.5/gstreamer-0.10/libgstreamer.html
 /!\ Implémentation en VERSION 1.0
 
+
 I) hello.c:
 ¯¯¯¯¯¯¯¯¯¯
 http://docs.gstreamer.com/pages/viewpage.action?pageId=327735
@@ -34,6 +35,7 @@ GstBus *bus = gst_element_get_bus(pipeline);
 E/
 GstMessage *msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
 	→ Récupération synchrone des messages: bloque à l'infini (GST_CLOCK_TIME_NONE) tant qu'on ne reçoit ni erreur, ni EOS.
+
 
 II) concept.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯
@@ -100,6 +102,7 @@ if (msg != NULL) {
 
 	→ Les GstMessage sont des structures assez complexes qui ne se manipulent qu'avec des macros comme GST_MESSAGE_TYPE(msg), GST_OBJECT_NAME(msg->src)
 
+
 III) dynamic_pipelines.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  Être notifié des signaux envoyés par les GstElement.
@@ -131,6 +134,7 @@ E/ Callback pad_added_handler()
 	→ Créer le lien souhaité, les 2 pads doivent être contenus dans le même bin.
 
 ** Voir I) et II) de HowTo-PLayback.txt **
+
 
 IV) basic-4_time_management.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
@@ -178,6 +182,7 @@ if (data->playing) {
 		gst_query_parse_seeking(query, NULL, &seekable, &start, &end);
 	→ Les requêtes de tout ordres marchent mieux en PAUSED voir en PLAYING.
 	  On crée une requête de type {seek, TIME} et on la passe au pipeline.
+
 
 V) basic-5_gui_toolkit.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
@@ -258,6 +263,7 @@ gst_element_post_message(pipeline, GstMessage* m);
 					gst_structure_new("tags-changed", NULL))
 	→ cela crée un type de message réservé aux applis (Gstreamer n'en fera rien), accompagné de l'information name="tags-changed".
 
+
 VI) basic-6_media-format_and_pad-caps.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  Que sont les capacités d'un Pad ?
@@ -317,9 +323,13 @@ gst_pad_get_current_caps(pad), gst_pad_query_caps(pad, NULL)
 
 Utilisation des GstElementFactory, GstStaticPadTemplate.
 
-VIb) basic-6_media-format_and_pad-caps.c: Version 2
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+VIb) basic-6b_media-format_and_pad-caps.c: Version 2
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 Permet de construire le pipeline sur la ligne de commande.
+Utilisation de Tee (voir plus tard) ⇒ un peu (très ?) alambiqué. Vilain de chez vilain.
+À effacer ?
+
 
 VII) multithreading_and_pad_availability.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
