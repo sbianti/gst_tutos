@@ -331,8 +331,8 @@ Utilisation de Tee (voir plus tard) ⇒ un peu (très ?) alambiqué. Vilain de c
 À effacer ?
 
 
-VII) multithreading_and_pad_availability.c:
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+VII) basic-7_multithreading_and_pad_availability.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  GStreamer crée un thread par flux, les greffons peuvent aussi en créer, mais comment en créer de nouveaux pour certaines parties du pipeline ?
  Qu'est-ce que la disponibilité des pads ?
  Comment copier des flux ?
