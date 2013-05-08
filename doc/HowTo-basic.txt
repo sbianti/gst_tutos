@@ -317,6 +317,10 @@ gst_pad_get_current_caps(pad), gst_pad_query_caps(pad, NULL)
 
 Utilisation des GstElementFactory, GstStaticPadTemplate.
 
+VIb) basic-6_media-format_and_pad-caps.c: Version 2
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Permet de construire le pipeline sur la ligne de commande.
+
 VII) multithreading_and_pad_availability.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  GStreamer crée un thread par flux, les greffons peuvent aussi en créer, mais comment en créer de nouveaux pour certaines parties du pipeline ?
