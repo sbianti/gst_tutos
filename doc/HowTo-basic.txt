@@ -338,3 +338,4 @@ VII) basic-7_multithreading_and_pad_availability.c:
  Comment copier des flux ?
 
 ⋅ Une partie de pipeline est appelée une branche et une application peut, en construisant un pipeline préciser qu'une branche de ce pipeline peut s'exécuter dans un thread différent.
+⋅ Il est parfois obligatoire de découper en plusieurs threads: lorsqu'il y a plusieurs sinks, chacun bloque son exécution tant que les autres ne sont pas prêts, si il n'y a qu'un thread, ceux-ci attendent le premier.
