@@ -337,5 +337,38 @@ VII) basic-7_multithreading_and_pad_availability.c:
  Qu'est-ce que la disponibilité des pads ?
  Comment copier des flux ?
 
-⋅ Une partie de pipeline est appelée une branche et une application peut, en construisant un pipeline préciser qu'une branche de ce pipeline peut s'exécuter dans un thread différent.
+⋅ Une partie de pipeline est appelée une branche et une application peut, en construisant un pipeline, préciser qu'une branche de ce pipeline peut s'exécuter dans un thread différent.
 ⋅ Il est parfois obligatoire de découper en plusieurs threads: lorsqu'il y a plusieurs sinks, chacun bloque son exécution tant que les autres ne sont pas prêts, si il n'y a qu'un thread, ceux-ci attendent le premier.
+⋅ Il y a plusieurs types de pad:
+     Les “always pads” → peuvent être liés dès l'état NULL avec gst_element_link.
+     Les “sometimes pads” → sont créés lors de l'arrivée de données.
+     Les “request pads” → créés à la demande (mais il peuvent quand même être liés avec gst_element_link, mais il faut alors penser à récupérer les pads créés automatiquement avec cette méthode pour les libérer après utilisation).
+
+A/
+Création des éléments, du pipeline…
+
+B/
+pad_template = gst_element_class_get_pad_template(
+	     GST_ELEMENT_GET_CLASS(pipeline_component[TEE]), TEE_SRC_NAME);
+	→ On récupère le schémat de connecteur du TEE.
+
+t_pad_1 = gst_element_request_pad(pipeline_component[TEE],
+				  tee_src_pad_template, NULL, NULL);
+	→ On obtient un pad de nom "src_0"
+
+q_1_pad = gst_element_get_static_pad(pipeline_component[AUDIO_QUEUE], "sink");
+	→ Récupération classique d'un “always pad”
+
+gst_pad_link(t_pad_1, q_1_pad);
+	→ Liage de tout ça.
+
+On répête ces opérations autant de fois que nécessaire pour créer autant de pad que l'on veut.
+
+C/
+gst_object_unref(q_1_pad);
+	→ On peut faire ça dès que notre pipeline est créé.
+
+gst_element_release_request_pad(pipeline_component[TEE], t_pad_1);
+gst_object_unref(t_pad_1);
+	→ A la fin seulement.
+

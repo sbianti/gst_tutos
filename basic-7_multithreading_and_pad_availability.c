@@ -58,6 +58,13 @@ int main(int argc, char *argv[]) {
   GstPad *tee_audio_pad, *tee_video_pad;
   GstPad *queue_audio_pad, *queue_video_pad;
   gboolean terminate = FALSE;
+  gint frequence;
+
+  if (argc < 2) {
+    g_printerr("No frequence arg: will be played at 215Hz\n");
+    frequence = 215;
+  } else
+    frequence = atoi(argv[1]);
 
   gst_init(&argc, &argv);
 
@@ -72,29 +79,32 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  g_object_set(pipeline_component[AUDIO_SRC], "freq", 215.0f, NULL);
+  g_object_set(pipeline_component[AUDIO_SRC], "freq", (float)frequence, NULL);
   g_object_set(pipeline_component[VISUAL], "shader", 0, "style", 1, NULL);
 
-  gst_bin_add_many(GST_BIN(pipeline), pipeline_component[AUDIO_SRC],
-		   pipeline_component[TEE], pipeline_component[AUDIO_QUEUE],
+  gst_bin_add_many(GST_BIN(pipeline),
+		   pipeline_component[AUDIO_SRC],
+		   pipeline_component[TEE],
+		   pipeline_component[AUDIO_QUEUE],
 		   pipeline_component[AUDIO_CONVERT],
 		   pipeline_component[AUDIO_RESAMPLE],
 		   pipeline_component[AUDIO_SINK],
-		   pipeline_component[VIDEO_QUEUE], /* pipeline_component[VISUAL], */
+		   pipeline_component[VIDEO_QUEUE],
+		   pipeline_component[VISUAL],
 		   pipeline_component[VIDEO_CONVERT],
 		   pipeline_component[VIDEO_SINK],
 		   NULL);
-  if (gst_element_link_many(pipeline_component[AUDIO_SRC],
-			    pipeline_component[TEE],
-			    NULL) != TRUE ||
+
+  if (gst_element_link(pipeline_component[AUDIO_SRC],
+		       pipeline_component[TEE]) != TRUE ||
       gst_element_link_many(pipeline_component[AUDIO_QUEUE],
 			    pipeline_component[AUDIO_CONVERT],
 			    pipeline_component[AUDIO_RESAMPLE],
 			    pipeline_component[AUDIO_SINK], NULL) != TRUE ||
       gst_element_link_many(pipeline_component[VIDEO_QUEUE],
-			    /* pipeline_component[VISUAL], */
-			    pipeline_component[VIDEO_CONVERT],
-			    pipeline_component[VIDEO_SINK], NULL) != TRUE) {
+      			    pipeline_component[VISUAL],
+      			    pipeline_component[VIDEO_CONVERT],
+      			    pipeline_component[VIDEO_SINK], NULL) != TRUE) {
     g_printerr("Elements could not be linked.\n");
     gst_object_unref(pipeline);
     return -1;
@@ -107,29 +117,31 @@ int main(int argc, char *argv[]) {
 #endif
 
   tee_src_pad_template = gst_element_class_get_pad_template
-    (GST_ELEMENT_GET_CLASS(pipeline_component[TEE]),
-     TEE_SRC_NAME);
-  printf("tee_src_pad_template = %p pour classe: %p\n", tee_src_pad_template,
-	 GST_ELEMENT_GET_CLASS(pipeline_component[TEE]));
+    (GST_ELEMENT_GET_CLASS(pipeline_component[TEE]), TEE_SRC_NAME);
+
   tee_audio_pad = gst_element_request_pad(pipeline_component[TEE],
 					  tee_src_pad_template, NULL, NULL);
-  printf("tee_audio_pad = %p\n", tee_audio_pad);
   g_print("Obtained request pad %s for audio branch.\n",
 	  gst_pad_get_name(tee_audio_pad));
+
   queue_audio_pad = gst_element_get_static_pad(pipeline_component[AUDIO_QUEUE],
 					       "sink");
+
   tee_video_pad = gst_element_request_pad(pipeline_component[TEE],
 					  tee_src_pad_template, NULL, NULL);
   g_print("Obtained request pad %s for video branch.\n",
 	  gst_pad_get_name(tee_video_pad));
+
   queue_video_pad = gst_element_get_static_pad(pipeline_component[VIDEO_QUEUE],
 					       "sink");
+
   if (gst_pad_link(tee_audio_pad, queue_audio_pad) != GST_PAD_LINK_OK ||
       gst_pad_link(tee_video_pad, queue_video_pad) != GST_PAD_LINK_OK) {
     g_printerr("Tee could not be linked.\n");
     gst_object_unref(pipeline);
     return -1;
   }
+
   gst_object_unref(queue_audio_pad);
   gst_object_unref(queue_video_pad);
 
