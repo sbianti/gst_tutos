@@ -1,7 +1,7 @@
 EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-3b_dynamic_pipelines basic-4_time_management basic-5_gui_toolkit\
 	basic-6_media-format_and_pad-caps playback-1_playbin \
-	playback-2_sub-management basic-7_multithreading_and_pad_availability.c
+	playback-2_sub-management basic-7_multithreading_and_pad_availability
 
 CC = gcc
 
