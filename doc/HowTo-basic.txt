@@ -372,3 +372,29 @@ gst_element_release_request_pad(pipeline_component[TEE], t_pad_1);
 gst_object_unref(t_pad_1);
 	→ A la fin seulement.
 
+
+VIII) basic-8_short-cutting_pipeline.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Comment extraire et injecter des données dans le pipeline ?
+
+Les éléments utilisés pour faire cela sont appsrc et appsink.
+Ces deux éléments possèdent leur propre API ? Qui nécessitent de lier avec la lib gstreamer-app.
+Cependant, il existe une approche plus simple, qui consiste à les contrôler avec des signaux.
+
+L'élément appsrc peut fonctionner selon plusieurs modes différents.
+	  pull-mode: il demande des données à l'appli chaque fois qu'il a besoin.
+	  push-mode: l'appli envoie des données à son rythme. De plus, dans ce mode, l'appli peut être bloquée lorsque assez de données ont été fournies, ou bien écouter les signaux “enough-data” et “need-data” pour contrôler le débit.
+
+Ce tuto utilise appsrc en pull-mode avec utilisation des signaux “enough-data” et “need-data”.
+
+L'unité transmise entre pad est le GstBuffer.
+Ces éléments possèdent un GstCaps, un horodatage et une durée.
+
+A/
+Création des éléments, link des always-pads, création des request-pads et link de ceux-ci.
+
+B/
+Connexion aux signaux "need-data" et "enough-data" de la source.
+Configuration du sink avec "emit-signals" à TRUE, connexion à "new-sample"
+
+Ça marche en 0.10, mais toujours pas en 1.0 ⇒ problème de négociation de pad.
