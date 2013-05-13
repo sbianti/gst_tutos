@@ -2,7 +2,8 @@ EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-3b_dynamic_pipelines basic-4_time_management basic-5_gui_toolkit\
 	basic-6_media-format_and_pad-caps playback-1_playbin \
 	playback-2_sub-management basic-7_multithreading_and_pad_availability \
-	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline
+	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline\
+	basic-9_media-info-gathering
 
 CC = gcc
 
@@ -20,6 +21,7 @@ LDFLAGS += `pkg-config --libs gstreamer-$(GST_VERSION)`
 LDFLAGS_GTK = `pkg-config --libs gtk+-$(GTK_VERSION)`
 LDFLAGS_GST_INTERFACES_0.10 = `pkg-config --libs gstreamer-interfaces-$(GST_VERSION)`
 LDFLAGS_GST_INTERFACES_1.0 =`pkg-config --libs gstreamer-video-1.0`
+LDFLAGS_GST_PBUTILS = `pkg-config --libs gstreamer-pbutils-$(GST_VERSION)`
 
 ifeq ($(origin debug), undefined)
 	CFLAGS += -O2
@@ -32,6 +34,8 @@ all:
 
 basic-5_gui_toolkit : CFLAGS += $(CFLAGS_GTK)
 basic-5_gui_toolkit : LDFLAGS += $(LDFLAGS_GTK) $(LDFLAGS_GST_INTERFACES_$(GST_VERSION))
+
+basic-9_media-info-gathering : LDFLAGS += $(LDFLAGS_GST_PBUTILS)
 
 .PHONY : clean
 clean:

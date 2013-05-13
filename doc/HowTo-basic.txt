@@ -398,3 +398,7 @@ Connexion aux signaux "need-data" et "enough-data" de la source.
 Configuration du sink avec "emit-signals" à TRUE, connexion à "new-sample"
 
 Ça marche en 0.10, mais toujours pas en 1.0 ⇒ problème de négociation de pad.
+
+
+IX) basic-9_media-info-gathering.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
