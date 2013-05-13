@@ -55,4 +55,5 @@ II) playback-2_sub-management.c:
 ⇒ Semble y avoir un bug lorsqu'on charge un sous-titre en plus :
   lorsqu'on change de sous-titre, plus rien n'est affiché.
 
-III)
+III) playback-3_short-cutting_pipeline.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
