@@ -124,7 +124,7 @@ g_object_set (data.source, "uri", cmd, NULL);
 	→ trivial
 
 D/
-g_signal_connect(data.source, "pad-added", G_CALLBACK (pad_added_handler), &data);
+g_signal_connect(data.source, "pad-added", G_CALLBACK(handler), &data);
 	→ “uridecodebin” crée des GstPad à la volée en analysant le flux reçu. Il va falloir les lier à l'“audioconvert”.
 
 E/ Callback pad_added_handler()
@@ -375,7 +375,7 @@ gst_object_unref(t_pad_1);
 
 VIII) basic-8_short-cutting_pipeline.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-Comment extraire et injecter des données dans le pipeline ?
+ Comment extraire et injecter des données dans le pipeline ?
 
 Les éléments utilisés pour faire cela sont appsrc et appsink.
 Ces deux éléments possèdent leur propre API ? Qui nécessitent de lier avec la lib gstreamer-app.
@@ -402,3 +402,34 @@ Configuration du sink avec "emit-signals" à TRUE, connexion à "new-sample"
 
 IX) basic-9_media-info-gathering.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Comment extraire des infos d'une URI ?
+ Comment savoir à l'avance si on peu jouer le contenu de cette URI ?
+
+GstDiscoverer est l'élément à utiliser.
+Il peut être utilisé de deux manières: synchrone ou asynchrone.
+
+Ce tuto implémente une version simplifiée de l'outil gst-discoverer, sur le mode asynchrone..
+
+A/
+GstDiscoverer *discoverer = gst_discoverer_new(5*GST_SECOND, &err);
+g_signal_connect(discoverer, "discovered", G_CALLBACK(callback), &data);
+g_signal_connect(discoverer, "finished", G_CALLBACK(callback), &data);
+	→ Création du GstDiscoverer, connexion des callbacks.
+
+gst_discoverer_start(data.discoverer);
+	→ démarrage d'une découverte asynchrone: si la liste des URI est vide, reste en attente.
+
+gst_discoverer_discover_uri_async(discoverer, uri)
+	→ ajoute une URI à la liste de discoverer. Si …start() à été appelé, le processus est actionné.
+
+… = g_main_loop_new(NULL, FALSE);
+  g_main_loop_run(data.loop);
+  gst_discoverer_stop(data.discoverer);
+	→ loop et stoppage du discovery avec vidage comme il faut de la liste.
+
+B/ on_discovered_cb()
+On récupère l'URI et le résultat.
+Si c'est OK, divers affichages avec
+   ⋅ gst_discoverer_info_get_*
+   ⋅ itération sur la GstTagList récupérée par …_get_tags(info)
+   ⋅ itération sur le GstDiscovererStreamInfo récupéré par …_get_stream_info(info) affichant les caractéristiques du stream ou du conteneur ainsi que les caps associées.
