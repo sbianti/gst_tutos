@@ -22,11 +22,11 @@ Il faut alors recourir à des requêtes d'un autre type: les “gst_query”.
 
 Le pipeline, le flow:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-Le pipeline, élément central du déroulement d'un processus multimédia passe par les états suivant:
+Le pipeline, élément central du déroulement d'un processus multimédia passe par les états suivants:
 GST_STATE_VOID_PENDING → GST_STATE_NULL
 		       → GST_STATE_READY → GST_STATE_PAUSED → GST_STATE_PLAYING
 
-Certaines opérations ne sont possible que dans un certain état.
+Certaines opérations ne sont possibles que dans un certain état.
 Penser à vérifier l'état avant d'agir.
 
 
