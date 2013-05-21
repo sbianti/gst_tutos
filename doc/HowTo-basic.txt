@@ -260,7 +260,7 @@ G/ tags_cb
  Pour cela, on poste un message sur le bus du pipeline qui est écouté par le thread ppal.
 gst_element_post_message(pipeline, GstMessage* m);
  avec m = gst_message_new_application(GST_OBJECT(pipeline),
-					gst_structure_new("tags-changed", NULL))
+				      gst_structure_new("tags-changed", NULL))
 	→ cela crée un type de message réservé aux applis (Gstreamer n'en fera rien), accompagné de l'information name="tags-changed".
 
 
@@ -285,7 +285,7 @@ Exemple de sink pad templates pour un objet audio sink et une vidéo source:
 SINK template: 'sink'
   Availability: Always
   Capabilities:
-    audio/x-raw-int
+    audio/x-raw-int (⇒ x-raw en gstreamer-1.0)
                signed: true
                 width: 16
                 depth: 16
@@ -433,3 +433,28 @@ Si c'est OK, divers affichages avec
    ⋅ gst_discoverer_info_get_*
    ⋅ itération sur la GstTagList récupérée par …_get_tags(info)
    ⋅ itération sur le GstDiscovererStreamInfo récupéré par …_get_stream_info(info) affichant les caractéristiques du stream ou du conteneur ainsi que les caps associées.
+
+
+X) Gstreamer tools:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Utilisation de gst-launch, gst-inspect, gst-…
+
+A/ gst-launch-1.0:
+   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+$ gst-launch playbin uri=file:///chemin (⇒ tuto #1)
+$ gst-launch videotestsrc ! videoconvert ! autovideosink (tuto #3)
+
+Modification d'une propriété d'un élément:
+$ gst-launch videotestsrc pattern=4 ! videoconvert ! autovideosink (tuto #2)
+
+Nommage d'un élément pour une réutilisation ultérieure:
+$ gst-launch videotestsrc ! videoconvert ! tee name=t ! queue ! autovideosink t. ! queue ! autovideosink (tuto #7)
+  → la notation <nom>. termine la branche et fait redescendre au niveau du Tee.
+
+Sélection de pads spécifiques:
+$ gst-launch souphttpsrc location=http://docs.gstreamer.com/media/sintel_trailer-480p.webm ! matroskademux name=d d.audio_0 ! vorbisparse ! matroskamux ! filesink location=sintel_video.mka
+  → ne récupérer que l'audio de ce flux.
+
+Sélectionner les pads correspondants à certaines capacités:
+$ gst-launch souphttpsrc location=http://docs.gstreamer.com/media/sintel_trailer-480p.webm ! matroskademux ! video/x-vp8 !  matroskamux ! filesink location=vidéo-seule.mkv
+
