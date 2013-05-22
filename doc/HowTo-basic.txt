@@ -458,3 +458,10 @@ $ gst-launch souphttpsrc location=http://docs.gstreamer.com/media/sintel_trailer
 Sélectionner les pads correspondants à certaines capacités:
 $ gst-launch souphttpsrc location=http://docs.gstreamer.com/media/sintel_trailer-480p.webm ! matroskademux ! video/x-vp8 !  matroskamux ! filesink location=vidéo-seule.mkv
 
+B/ gst-inspect:
+   ¯¯¯¯¯¯¯¯¯¯¯
+   ⇒ sans options, affiche tous les éléments disponibles. Sinon, affiche toutes les infos sur l'élément passé en paramètre.
+
+C/ gst-discover:
+   ¯¯¯¯¯¯¯¯¯¯¯¯
+   ⇒ inspecter un média.
