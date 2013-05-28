@@ -465,3 +465,48 @@ B/ gst-inspect:
 C/ gst-discover:
    ¯¯¯¯¯¯¯¯¯¯¯¯
    ⇒ inspecter un média.
+
+
+XI) Gstreamer debugging tool:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+La variable d'environnement GST_DEBUG est la clef:
+
+0	none	Aucune info n'est affichée.
+1	ERROR   Affiche toutes les erreurs fatales = les erreurs qui empèchent d'effectuer les actions demandées. L'application peut toujours s'en sortir si les conditions à l'origine de l'erreur sont gérées.
+2	WARNING Affiche tous les warnings = les erreurs non-fatales. Des problèmes visibles pour l'utilisateur sont susceptibles de survenir.
+3	INFO    Affiche tous les messages informatifs. Typiquement, ce sont les évènements qui arrivent une fois ou sont assez rares ou important pour être affichés à ce niveau.
+4	DEBUG   Affiche tous les messages de débug. Ils sont relatifs aux évènement qui arrivent un nombre limité de fois pendant la vie de l'objet ; cela inclue la mise en route, la destruction, le changement de paramètre, ...
+5	LOG     Affiche tous les messages. Ce sont les messages des évènements qui arrivent de manière répétée pendant la vie d'un objet ; la lecture classique et les évènements en état stable entre dans cette catégorie.
+
+On peut aussi donner une valeur spécifique pour certains pluggins:
+   $ GST_DEBUG=2,audiotestsrc:5 ./prog  ⇒ niveau 5 pour audiotestsrc et 2 pour le reste.
+   $ GST_DEBUG=2,audio*:5 ./prog	⇒ 5 pour les pluggins dont le nom commence par audio, 2 pour les autres.
+
+   $ gst-launch --gst-debug-help	⇒ donne la liste de toutes les catégories. Cette liste change à chaque fois qu'on installe/désinstalle un pluggin.
+
+Détail des infos de débuggage:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+<date> <pid> <thread_id> <niveau de débug du message> <catégorie (plugin) de débug> <fichier et ligne>:<fonction>:<objet émetteur du message> <message>
+
+Ajouter son propre débuggage:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Cinq macros : GST_ERROR(), GST_WARNING(), GST_INFO(), GST_LOG() et GST_DEBUG()
+Elles fonctionnent sur le mode de printf et utilise la catégorie “default”.
+Pour la changer, il faut ajouter:
+     GST_DEBUG_CATEGORY_STATIC (my_category);
+     #define GST_CAT_DEFAULT my_category
+Puis après gst_init():
+     GST_DEBUG_CATEGORY_INIT (categorie, "ma categorie", 0, "bla bla bla");
+⇒ Voir la doc de GST_DEBUG_CATEGORY_INIT.
+
+Créer des graph de pipeline:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+$ GST_DEBUG_DUMP_DOT_DIR=. ./prog
+
+Active la création de graph et les écrira dans le répertoire donné.
+
+Pour cela, il faut utiliser les macros GST_DEBUG_BIN_TO_DOT_FILE() et GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS().
+gst-launch crée un graph à chaque changement d'état.
+
+Pour créer une image avec un graph “.dot”:
+dot -Tpng fichier.dot -o graph.png
