@@ -3,7 +3,7 @@ EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-6_media-format_and_pad-caps playback-1_playbin \
 	playback-2_sub-management basic-7_multithreading_and_pad_availability \
 	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline\
-	basic-9_media-info-gathering
+	basic-9_media-info-gathering basic-12_streaming
 
 CC = gcc
 
