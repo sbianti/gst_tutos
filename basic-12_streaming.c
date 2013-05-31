@@ -61,15 +61,33 @@ int main(int argc, char *argv[]) {
   GstStateChangeReturn ret;
   GMainLoop *main_loop;
   CustomData data;
+  char *uri;
+
+#define DEFAULT_URI "http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
 
   setlocale(LC_ALL, "fr_FR.utf8");
+
+  if (argc > 1) {
+    if (g_str_has_prefix(argv[1], "http://") || g_str_has_prefix(argv[1], "ftp://"))
+      uri = g_strdup_printf("playbin uri=%s", argv[1]);
+    else if (argv[1][0] == '~')
+      uri = g_strdup_printf("playbin uri=\"file://%s%s\"", g_get_home_dir(), argv[1]+1);
+    else
+      if (g_file_test(argv[1], G_FILE_TEST_IS_REGULAR))
+	uri = g_strdup_printf("playbin uri=\"file://%s\"", argv[1]);
+      else
+	uri = NULL;
+  } else
+    uri = NULL;
 
   gst_init(&argc, &argv);
 
   memset(&data, 0, sizeof(data));
 
-  pipeline = gst_parse_launch("playbin uri=http://docs.gstreamer.com/media/"
-			      "sintel_trailer-480p.webm", NULL);
+  if (uri == NULL)
+    uri = g_strdup_printf("playbin uri=%s", DEFAULT_URI);
+
+  pipeline = gst_parse_launch(uri, NULL);
   bus = gst_element_get_bus(pipeline);
 
   ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
