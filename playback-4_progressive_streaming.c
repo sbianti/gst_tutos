@@ -62,45 +62,56 @@ static void cb_message(GstBus *bus, GstMessage *msg, CustomData *data) {
   }
 }
 
+#if GST_VERSION_MAJOR == 0
+#define PIPELINE "playbin2 uri=http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
+#define FORMAT &format
+#else
+#define PIPELINE "playbin uri=http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
+#define FORMAT format
+#endif
+
 static gboolean refresh_ui(CustomData *data) {
   GstQuery *query;
   gboolean result;
+  gint n_ranges, range, i;
+  gchar graph[GRAPH_LENGTH + 1];
+  GstFormat format = GST_FORMAT_TIME;
+  gint64 position = 0, duration = 0;
 
   query = gst_query_new_buffering(GST_FORMAT_PERCENT);
-  result = gst_element_query(data->pipeline, query);
-  if (result) {
-    gint n_ranges, range, i;
-    gchar graph[GRAPH_LENGTH + 1];
-    GstFormat format = GST_FORMAT_TIME;
-    gint64 position = 0, duration = 0;
+  if (gst_element_query(data->pipeline, query) == FALSE)
+    return TRUE;
 
-    memset(graph, ' ', GRAPH_LENGTH);
-    graph[GRAPH_LENGTH] = '\0';
+  memset(graph, ' ', GRAPH_LENGTH);
+  graph[GRAPH_LENGTH] = '\0';
 
-    n_ranges = gst_query_get_n_buffering_ranges(query);
-    for (range = 0; range < n_ranges; range++) {
-      gint64 start, stop;
-      gst_query_parse_nth_buffering_range(query, range, &start, &stop);
-      start = start * GRAPH_LENGTH / 100;
-      stop = stop * GRAPH_LENGTH / 100;
-      for (i = (gint)start; i < stop; i++)
-        graph [i] = '-';
-    }
-    if (gst_element_query_position(data->pipeline, format, &position) &&
-        GST_CLOCK_TIME_IS_VALID(position) &&
-        gst_element_query_duration(data->pipeline, format, &duration) &&
-        GST_CLOCK_TIME_IS_VALID(duration)) {
-      i = (gint)(GRAPH_LENGTH * (double)position / (double)(duration + 1));
-      graph [i] = data->buffering_level < 100 ? 'X' : '>';
-    }
-    g_print("[%s]", graph);
-    if (data->buffering_level < 100) {
-      g_print(" Buffering: %3d%%", data->buffering_level);
-    } else {
-      g_print("                ");
-    }
-    g_print("\r");
+  n_ranges = gst_query_get_n_buffering_ranges(query);
+
+  for (range = 0; range < n_ranges; range++) {
+    gint64 start, stop;
+    gst_query_parse_nth_buffering_range(query, range, &start, &stop);
+    start = start * GRAPH_LENGTH / 100;
+    stop = stop * GRAPH_LENGTH / 100;
+    for (i = (gint)start; i < stop; i++)
+      graph[i] = '-';
   }
+
+  if (gst_element_query_position(data->pipeline, FORMAT, &position) &&
+      GST_CLOCK_TIME_IS_VALID(position) &&
+      gst_element_query_duration(data->pipeline, FORMAT, &duration) &&
+      GST_CLOCK_TIME_IS_VALID(duration)) {
+    i = (gint)(GRAPH_LENGTH * (double)position / (double)(duration + 1));
+    graph[i] = data->buffering_level < 100 ? 'X' : '>';
+  }
+
+  g_print("[%s]", graph);
+
+  if (data->buffering_level < 100)
+    g_print(" Buffering: %3d%%", data->buffering_level);
+  else
+    g_print("                ");
+
+  g_print("\r");
 
   return TRUE;
 }
@@ -118,7 +129,7 @@ int main(int argc, char *argv[]) {
   memset(&data, 0, sizeof(data));
   data.buffering_level = 100;
 
-  pipeline = gst_parse_launch("playbin uri=http://docs.gstreamer.com/media/sintel_trailer-480p.webm", NULL);
+  pipeline = gst_parse_launch(PIPELINE, NULL);
   bus = gst_element_get_bus(pipeline);
 
   g_object_get(pipeline, "flags", &flags, NULL);

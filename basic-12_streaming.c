@@ -68,10 +68,12 @@ int main(int argc, char *argv[]) {
   setlocale(LC_ALL, "fr_FR.utf8");
 
   if (argc > 1) {
-    if (g_str_has_prefix(argv[1], "http://") || g_str_has_prefix(argv[1], "ftp://"))
+    if (g_str_has_prefix(argv[1], "http://") ||
+	g_str_has_prefix(argv[1], "ftp://"))
       uri = g_strdup_printf("playbin uri=%s", argv[1]);
     else if (argv[1][0] == '~')
-      uri = g_strdup_printf("playbin uri=\"file://%s%s\"", g_get_home_dir(), argv[1]+1);
+      uri = g_strdup_printf("playbin uri=\"file://%s%s\"",
+			    g_get_home_dir(), argv[1]+1);
     else
       if (g_file_test(argv[1], G_FILE_TEST_IS_REGULAR))
 	uri = g_strdup_printf("playbin uri=\"file://%s\"", argv[1]);

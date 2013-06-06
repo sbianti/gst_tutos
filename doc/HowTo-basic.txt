@@ -510,3 +510,7 @@ gst-launch crée un graph à chaque changement d'état.
 
 Pour créer une image avec un graph “.dot”:
 dot -Tpng fichier.dot -o graph.png
+
+
+XII) basic-12_streaming.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
