@@ -2,9 +2,18 @@
 #include <string.h>
 
 #define GRAPH_LENGTH 80
+#define DEFAULT_URI "http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
+
+#if GST_VERSION_MAJOR == 0
+#define PLAYBIN "playbin2"
+#define FORMAT &format
+#else
+#define PLAYBIN "playbin"
+#define FORMAT format
+#endif
 
 typedef enum {
-  GST_PLAY_FLAG_DOWNLOAD      = (1 << 7)
+  GST_PLAY_FLAG_DOWNLOAD = (1 << 7)
 } GstPlayFlags;
 
 typedef struct _CustomData {
@@ -14,13 +23,15 @@ typedef struct _CustomData {
   gint buffering_level;
 } CustomData;
 
+gboolean keep_file = FALSE;
+
 static void got_location(GstObject *gstobject, GstObject *prop_object,
 			 GParamSpec *prop, gpointer data) {
   gchar *location;
   g_object_get(G_OBJECT(prop_object), "temp-location", &location, NULL);
   g_print("Temporary file: %s\n", location);
-  /* Uncomment this line to keep the temporary file after the program exits */
-  /* g_object_set(G_OBJECT(prop_object), "temp-remove", FALSE, NULL); */
+  if (keep_file)
+    g_object_set(G_OBJECT(prop_object), "temp-remove", FALSE, NULL);
 }
 
 static void cb_message(GstBus *bus, GstMessage *msg, CustomData *data) {
@@ -62,17 +73,8 @@ static void cb_message(GstBus *bus, GstMessage *msg, CustomData *data) {
   }
 }
 
-#if GST_VERSION_MAJOR == 0
-#define PIPELINE "playbin2 uri=http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
-#define FORMAT &format
-#else
-#define PIPELINE "playbin uri=http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
-#define FORMAT format
-#endif
-
 static gboolean refresh_ui(CustomData *data) {
   GstQuery *query;
-  gboolean result;
   gint n_ranges, range, i;
   gchar graph[GRAPH_LENGTH + 1];
   GstFormat format = GST_FORMAT_TIME;
@@ -84,14 +86,15 @@ static gboolean refresh_ui(CustomData *data) {
 
   memset(graph, ' ', GRAPH_LENGTH);
   graph[GRAPH_LENGTH] = '\0';
-
   n_ranges = gst_query_get_n_buffering_ranges(query);
-
+  /* g_print("n_ranges = %d\n", n_ranges); */
   for (range = 0; range < n_ranges; range++) {
     gint64 start, stop;
     gst_query_parse_nth_buffering_range(query, range, &start, &stop);
-    start = start * GRAPH_LENGTH / 100;
-    stop = stop * GRAPH_LENGTH / 100;
+    /* g_print("start = %d et stop = %d\n", start, stop); */
+    start = start * GRAPH_LENGTH / GST_FORMAT_PERCENT_MAX;
+    stop = stop * GRAPH_LENGTH / GST_FORMAT_PERCENT_MAX;
+    /* g_print("START = %d et STOP = %d\n", start, stop); */
     for (i = (gint)start; i < stop; i++)
       graph[i] = '-';
   }
@@ -123,21 +126,59 @@ int main(int argc, char *argv[]) {
   GMainLoop *main_loop;
   CustomData data;
   guint flags;
+  char *pipeline_str;
+  guint64 ring_buffer_max_size = 0;
+  GError *error = NULL;
+  GOptionContext *context;
+
+  GOptionEntry options[] = {
+    { "ring-buffer-size", 'z', 0, G_OPTION_ARG_INT, &ring_buffer_max_size,
+      "limit the amount of downloaded data", NULL },
+    { "keep-file", 'k', 0, G_OPTION_ARG_NONE, &keep_file,
+      "keep the temporary file after the program exits", NULL },
+    { NULL }
+  };
+
+  context = g_option_context_new("");
+
+  g_option_context_add_main_entries(context, options, "");
+  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+    g_print("option parsing failed: %s\n", error->message);
+    return -1;
+  }
+  g_option_context_free(context);
+
+  if (argc > 1) {
+    if (g_str_has_prefix(argv[1], "http://") ||
+	g_str_has_prefix(argv[1], "ftp://"))
+      pipeline_str = g_strdup_printf("%s uri=\"%s\"", PLAYBIN, argv[1]);
+    else if (argv[1][0] == '~')
+      pipeline_str = g_strdup_printf("%s uri=\"file://%s%s\"", PLAYBIN,
+				     g_get_home_dir(), argv[1]+1);
+    else if (g_file_test(argv[1], G_FILE_TEST_IS_REGULAR))
+      pipeline_str = g_strdup_printf("playbin uri=\"file://%s\"", argv[1]);
+    else
+      pipeline_str = NULL;
+  } else
+    pipeline_str = NULL;
 
   gst_init(&argc, &argv);
 
   memset(&data, 0, sizeof(data));
   data.buffering_level = 100;
 
-  pipeline = gst_parse_launch(PIPELINE, NULL);
+  if (pipeline_str == NULL)
+    pipeline_str = g_strdup_printf("%s uri=%s", PLAYBIN, DEFAULT_URI);
+
+  pipeline = gst_parse_launch(pipeline_str, NULL);
   bus = gst_element_get_bus(pipeline);
 
   g_object_get(pipeline, "flags", &flags, NULL);
   flags |= GST_PLAY_FLAG_DOWNLOAD;
   g_object_set(pipeline, "flags", flags, NULL);
 
-  /* Uncomment this line to limit the amount of downloaded data */
-  /* g_object_set(pipeline, "ring-buffer-max-size", (guint64)4000000, NULL); */
+  if (ring_buffer_max_size > 0)
+    g_object_set(pipeline, "ring-buffer-max-size", ring_buffer_max_size, NULL);
 
   ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE) {
@@ -155,7 +196,7 @@ int main(int argc, char *argv[]) {
   gst_bus_add_signal_watch(bus);
   g_signal_connect(bus, "message", G_CALLBACK(cb_message), &data);
   g_signal_connect(pipeline, "deep-notify::temp-location",
-		   G_CALLBACK(got_location), NULL);
+  		   G_CALLBACK(got_location), NULL);
 
   g_timeout_add_seconds(1, (GSourceFunc)refresh_ui, &data);
 
