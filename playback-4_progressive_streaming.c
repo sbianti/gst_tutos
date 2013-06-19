@@ -42,7 +42,7 @@ static void cb_message(GstBus *bus, GstMessage *msg, CustomData *data) {
     gchar *debug;
 
     gst_message_parse_error(msg, &err, &debug);
-    g_print("Error: %s\n", err->message);
+    g_print("\nError: %s\n", err->message);
     g_error_free(err);
     g_free(debug);
 
