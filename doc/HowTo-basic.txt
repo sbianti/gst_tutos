@@ -518,7 +518,7 @@ XII) basic-12_streaming.c:
 
 Buffer:
 L'élément Queue possède une liste de buffers. Dans ce tuto, on l'utilisera par l'intermédiaire de playbin.
-Une application voulant gérer la mise en tampon peut écouter les messages venant de la queue et mettre en pause la lecture lorsque son niveau est trop faible pour ne pas recevoir un EOS non solicité.
+Une application voulant gérer la mise en tampon peut écouter les messages venant de la queue et mettre en pause la lecture lorsque son niveau est trop faible pour ne pas recevoir un EOS non sollicité.
 
 Horloge:
 Elle permet la synchronisation entre les différents sinks.
