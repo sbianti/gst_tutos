@@ -55,5 +55,63 @@ II) playback-2_sub-management.c:
 ⇒ Semble y avoir un bug lorsqu'on charge un sous-titre en plus :
   lorsqu'on change de sous-titre, plus rien n'est affiché.
 
+
 III) playback-3_short-cutting_pipeline.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+
+IV) playback-4_progressive_streaming.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Comment activer le cache de données téléchargées ?
+ Comment en contrôler la quantité ?
+ Comment conserver ce qui a été téléchargé ?
+
+Par défaut, le flux téléchargé est conservé en mémoire dans des buffers éliminés dès qu'ils ont étés consommés. Dans ce cas, le seul moyen de faire un retour arrière est de re-télécharger ces données.
+
+Ce n'est pas une technique très efficace pour la lecture des flux qui ne sont pas en direct.
+
+Les media-players présentent généralement une barre affichant l'état des données téléchargées accompagnée de la position courante.
+
+L'élément playbin permet le buffering sur disque à travers le flag booléen “download”.
+
+A/
+Idem Basic-12
+
+B/
+  …
+  flags |= GST_PLAY_FLAG_DOWNLOAD;
+  g_object_set (pipeline, "flags", flags, NULL);
+	→ On veut stocker le flux. L'enum GstPlayFlags est déclarée dans gst-plugins-base.
+
+C/
+  g_object_set(pipeline, "ring-buffer-max-size", (guint64)400000, NULL);
+	→ Limitation du tampon cyclique à 400000 octets.
+
+D1/
+  g_signal_connect(pipeline, "deep-notify::temp-location", G_CALLBACK(cb), NULL);
+	→ Le signal “deep-notify” est émit par tout GstObject quand une propriété d'un élément enfant change. Ici, on veut être averti du changement du nom du fichier où stocker les données téléchargées, ce qui arrive lorsque la Queue crée ce fichier.
+
+D2/
+	→ Dans la callback, on n'a qu'à récupérer cette propriété et avec:
+  g_object_set(G_OBJECT(prop_object), "temp-remove", FALSE, NULL);
+	→ Lorsque le pipeline passe PAUSED à READY, le fichier qui est normalement effacé ne l'est pas.
+
+E/ gboolean refresh_ui(CustomData *data)
+  GstQuery *query = gst_query_new_buffering(GST_FORMAT_PERCENT);
+	→ création d'une requête de type buffering en %
+
+  int n = gst_query_get_n_buffering_ranges(query);
+	→ récupère le nombre de buffers stockés
+
+  for (range = 0; range < n_ranges; range++) {
+    gint64 start, stop;
+    gst_query_parse_nth_buffering_range(query, range, &start, &stop);
+    …
+	→ récupère les intervalles (en %) des segments téléchargés du flux.
+
+  if (gst_element_query_position(data->pipeline, FORMAT, &position) &&
+      GST_CLOCK_TIME_IS_VALID(position) &&
+      gst_element_query_duration(data->pipeline, FORMAT, &duration) &&
+      GST_CLOCK_TIME_IS_VALID(duration)) {
+      …
+	→ On récupère la position et la durée (en seconde), et on valide ces valeurs.

@@ -133,7 +133,7 @@ E/ Callback pad_added_handler()
 ⋅gst_pad_link(new_pad, sink_pad);
 	→ Créer le lien souhaité, les 2 pads doivent être contenus dans le même bin.
 
-** Voir I) et II) de HowTo-PLayback.txt **
+** Voir I) et II) de HowTo-Playback.txt **
 
 
 IV) basic-4_time_management.c:
@@ -514,3 +514,46 @@ dot -Tpng fichier.dot -o graph.png
 
 XII) basic-12_streaming.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Infos additionnelles sur le streaming: Buffering et reprises d'interruptions (perte d'horloge).
+
+Buffer:
+L'élément Queue possède une liste de buffers. Dans ce tuto, on l'utilisera par l'intermédiaire de playbin.
+Une application voulant gérer la mise en tampon peut écouter les messages venant de la queue et mettre en pause la lecture lorsque son niveau est trop faible pour ne pas recevoir un EOS non solicité.
+
+Horloge:
+Elle permet la synchronisation entre les différents sinks.
+De nombreux éléments en fournissent une et GStreamer en sélectionne une parmis tous ces éléments.
+Parfois, cette horloge est «perdue», il faut alors en selectionner une autre.
+Cela est fait en passant en PAUSED, puis en PLAYING.
+
+A/
+gst_element_set_state(pipeline, GST_STATE_PLAYING);
+… if (ret == GST_STATE_CHANGE_NO_PREROLL) {
+    data.is_live = TRUE;
+  }
+
+La valeur …NO_PREROLL est retournée par le passage en GST_STATE_PAUSED.
+Cela signifie que le stream est live et que le passage en PAUSED est équivalent à PLAYING (un stream live ne peut pas être mis en pause).
+
+Dans ce tuto, la mise en tampon sera désactivée si le stream est live.
+
+B/
+switch (GST_MESSAGE_TYPE(msg)) {
+…
+ case GST_MESSAGE_BUFFERING:
+ gst_message_parse_buffering(msg, &percent);
+ if (percent < 100)
+    gst_element_set_state(data->pipeline, GST_STATE_PAUSED);
+ else
+    gst_element_set_state(data->pipeline, GST_STATE_PLAYING);
+
+    → On exige un buffer rempli à 100% pour lire le flux.
+
+C/
+case GST_MESSAGE_CLOCK_LOST:
+     gst_element_set_state(data->pipeline, GST_STATE_PAUSED);
+     gst_element_set_state(data->pipeline, GST_STATE_PLAYING);
+
+     → Triviale re-création d'horloge.
+
+** Voir Playback-4 **
