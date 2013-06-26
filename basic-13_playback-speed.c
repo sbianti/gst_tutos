@@ -19,28 +19,27 @@ typedef struct _CustomData {
   gdouble rate;
 } CustomData;
 
-/* Send seek event to change rate */
 static void send_seek_event(CustomData *data) {
-  gint64 position;
-  GstFormat format = GST_FORMAT_TIME;
+  /* gint64 position; */
+  /* GstFormat format = GST_FORMAT_TIME; */
   GstEvent *seek_event;
 
-  if (!gst_element_query_position(data->pipeline, FORMAT, &position)) {
-    g_printerr("Unable to retrieve current position.\n");
-    return;
-  }
+  /* if (!gst_element_query_position(data->pipeline, FORMAT, &position)) { */
+  /*   g_printerr("Unable to retrieve current position.\n"); */
+  /*   return; */
+  /* } */
 
-  if (data->rate > 0) {
+  /* if (data->rate > 0) { */
     seek_event =
       gst_event_new_seek(data->rate, GST_FORMAT_TIME,
 			 GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE,
-			 GST_SEEK_TYPE_SET, position, GST_SEEK_TYPE_NONE, 0);
-  } else {
-    seek_event =
-      gst_event_new_seek(data->rate, GST_FORMAT_TIME,
-			 GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE,
-			 GST_SEEK_TYPE_SET, 0, GST_SEEK_TYPE_SET, position);
-  }
+			 GST_SEEK_TYPE_NONE, -1, GST_SEEK_TYPE_NONE, -1);
+  /* } else { */
+  /*   seek_event = */
+  /*     gst_event_new_seek(data->rate, GST_FORMAT_TIME, */
+  /* 			 GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE, */
+  /* 			 GST_SEEK_TYPE_NONE, -1, GST_SEEK_TYPE_NONE, -1); */
+  /* } */
 
   if (data->video_sink == NULL) {
     g_object_get(data->pipeline, "video-sink", &data->video_sink, NULL);
@@ -83,6 +82,9 @@ static gboolean handle_keyboard(GIOChannel *source, GIOCondition cond,
       g_object_get(data->pipeline, "video-sink", &data->video_sink, NULL);
     }
 
+    data->playing = FALSE;
+    gst_element_set_state(data->pipeline, GST_STATE_PAUSED);
+
     gst_element_send_event(data->video_sink,
 			   gst_event_new_step(GST_FORMAT_BUFFERS, 1, data->rate,
 					      TRUE, FALSE));
@@ -118,9 +120,9 @@ int main(int argc, char *argv[]) {
     else if (g_file_test(argv[1], G_FILE_TEST_IS_REGULAR))
       pipeline_str = g_strdup_printf("playbin uri=\"file://%s\"", argv[1]);
     else
-      pipeline_str = NULL;
+      pipeline_str = g_strdup_printf("%s uri=%s", PLAYBIN, DEFAULT_URI);
   } else
-    pipeline_str = NULL;
+    pipeline_str = g_strdup_printf("%s uri=%s", PLAYBIN, DEFAULT_URI);
 
   gst_init(&argc, &argv);
 
@@ -140,6 +142,7 @@ int main(int argc, char *argv[]) {
 #else
   io_stdin = g_io_channel_unix_new(fileno(stdin));
 #endif
+
   g_io_add_watch(io_stdin, G_IO_IN, (GIOFunc)handle_keyboard, &data);
 
   ret = gst_element_set_state(data.pipeline, GST_STATE_PLAYING);
@@ -148,17 +151,24 @@ int main(int argc, char *argv[]) {
     gst_object_unref(data.pipeline);
     return -1;
   }
+
   data.playing = TRUE;
+
   data.rate = 1.0;
 
   data.loop = g_main_loop_new(NULL, FALSE);
   g_main_loop_run(data.loop);
 
   g_main_loop_unref(data.loop);
+
   g_io_channel_unref(io_stdin);
+
   gst_element_set_state(data.pipeline, GST_STATE_NULL);
+
   if (data.video_sink != NULL)
     gst_object_unref(data.video_sink);
+
   gst_object_unref(data.pipeline);
+
   return 0;
 }

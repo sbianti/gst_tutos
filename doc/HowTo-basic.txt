@@ -557,3 +557,42 @@ case GST_MESSAGE_CLOCK_LOST:
      → Triviale re-création d'horloge.
 
 ** Voir Playback-4 **
+
+
+XIII) basic-13_playback-speed.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Utilisation des «trick modes» (contrôle de la vitesse et du sens de lecture, faire de l'image par image).
+
+Il n'existe pas dans GStreamer de fonction pour changer uniquement la vitesse de lecture.
+Cette valeur n'est qu'un paramètre parmis d'autres d'autres fonctions.
+
+Deux évènements permettent de changer la vitesse : seek_event et step_event.
+
+seek_event permet de se déplacer dans le fichier tout en changeant la vitesse (en positif ou négatif) alors que step_event permet d'avancer d'un certain nombre d'images à la fois tout en changeant la vitesse mais seulement vers l'avant.
+
+Ces évènements sont envoyés dans le pipeline, mais si un bin reçoit un évènement, il le transmet à tous ses enfants ce qui n'est pas nécessaire : il suffit seulement d'envoyer l'évènement à un sink (vidéo ou audio, peu importe) et le reste se fait tout seul.
+
+A/ Création du pipeline, installation de l'observateur d'entrées/sorties (g_io_add_watch).
+	→ classique
+
+B/ Création de l'évènement seek, envoie au pipeline.
+  seek_event = gst_event_new_seek(data->rate, GST_FORMAT_TIME,
+			 	  GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE,
+			 	  GST_SEEK_TYPE_NONE, -1, GST_SEEK_TYPE_NONE, -1);
+	→ Dans le tuto original, on récupère la position en seconde pour faire un seek depuis cette position (pour une avance rapide) ou vers cette position (lecture inversée).
+	  Cette manière de faire ne marche pas, inutile apparemment de différencier les deux cas, il suffit de mettre la vitesse que l'on veut et de ne pas se préocuper des positions de début et fin de segment avec GST_SEEK_TYPE_NONE à la place de GST_SEEK_TYPE_SET.
+
+  g_object_get(data->pipeline, "video-sink", &data->video_sink, NULL);
+  gst_element_send_event(data->video_sink, seek_event);
+	→ trivial
+
+C/ Évènement step
+  data->playing = FALSE;
+  gst_element_set_state(data->pipeline, GST_STATE_PAUSED);
+  gst_element_send_event(data->video_sink,
+			 gst_event_new_step(GST_FORMAT_BUFFERS, 1, rate, TRUE, FALSE));
+
+	→ marche mieux en pause
+
+/!\ Malgrès mes modifs, la lecture arrière ne marche qu'avec certains formats de fichiers, et encore, assez moyennement (je n'ai pas encore pu changer la vitesse correctement pendant une lecture arrière).
+    Lecture arrière réussie avec un fichier flv. Lors du changement de la vitesse en arrière, j'obtiens des erreurs ”GStreamer-CRITICAL **: gst_segment_clip: assertion `segment->format == format' failed”
