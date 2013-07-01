@@ -455,7 +455,7 @@ Sélection de pads spécifiques:
 $ gst-launch souphttpsrc location=http://docs.gstreamer.com/media/sintel_trailer-480p.webm ! matroskademux name=d d.audio_0 ! vorbisparse ! matroskamux ! filesink location=sintel_video.mka
   → ne récupérer que l'audio de ce flux.
 
-Sélectionner les pads correspondants à certaines capacités:
+Sélectionner les pads correspondants à certaines capacités (caps filter):
 $ gst-launch souphttpsrc location=http://docs.gstreamer.com/media/sintel_trailer-480p.webm ! matroskademux ! video/x-vp8 !  matroskamux ! filesink location=vidéo-seule.mkv
 
 B/ gst-inspect:
@@ -605,7 +605,7 @@ XIV) GStreamer handy elements:
 Les Bin:
 ¯¯¯¯¯¯¯
 1) playbin      ⇒ Largement utilisé dans les tutos.
-2) uridecodebin ⇒ Choisi une source pour décoder une uri en un flux brut et la connecte à decodebin.
+2) uridecodebin ⇒ Choisi une source pour décoder une URI en un flux brut et la connecte à decodebin.
 	ex: gst-launch uridecodebin uri=… ! [audioconvert !] autovideosink
 3) decodebin	⇒ contruit une branche contenant les décodeurs et multiplexeurs disponibles. Il en résulte éventuellement plusieurs source pads (autant que de flux contenus)
 	ex: gst-launch souphttpsrc location=… ! decodebin ! autovideosink
@@ -619,7 +619,7 @@ Les générateurs de flux: videotestsrc et audiotestsrc
 Les adaptateurs vidéo:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 1) videoconvert [ffmpegcolorspace en 0.10] ⇒ convertit les espaces de couleur.
-2) videorate ⇒ permet de faire correspondre le nombre d'images / seconde entre 2 éléments contiguës dans le pipeline. Il ajoute, enlève des images tant qu'il faut. Aucune interpolation n'est effectuée. Débute par une négociation entre les 2 éléments adjacents pour minimiser l'impacte sur les performances.
+2) videorate ⇒ permet de faire correspondre le nombre d'images / seconde entre 2 éléments contiguës dans le pipeline. Il ajoute, enlève des images tant qu'il faut. Aucune interpolation n'est effectuée. Débute par une négociation entre les 2 éléments adjacents pour minimiser l'impacte sur les performances (donc il peut ne rien faire).
 	ex: gst-launch-1.0 videotestsrc horizontal-speed=23 pattern=11 ! video/x-raw,framerate=30/1 ! videorate ! video/x-raw,framerate=1/1 ! autovideosink
 3) videoscale ⇒ met à l'échelle la définition de la vidéo. Comme tous les adaptateurs, il débute son travail par une négociation pour tenter de ne rien faire.
 	ex: gst-launch-1.0 uridecodebin uri=… ! videoscale ! video/x-raw,width=640,height=480 ! autovideosink
@@ -630,3 +630,23 @@ Les adaptateurs audio:
 2) audioresample ⇒ rééchantillonne l'audio.
 	ex: gst-launch-1.0 uridecodebin uri=… ! audioresample ! audio/x-raw,rate=4000 ! audioconvert ! autoaudiosink
 3) audiorate	 ⇒ à partir d'un flux brut, il produit un flux parfait en ajoutant ou enlevant des échantillons → il ne permet pas (à la différence de videorate) de changer la fréquence d'échantillonnage ! C'est un nettoyeur de flux, utile lorsqu'on récupère un flux où des échantillons ont étés perdus (par ex. dans un conteneur qui ne garde pas l'horodatage de l'audio).
+
+Multithreading:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Queue      ⇒ elles stockent les données jusqu'à ce que éventuellement une certaine limite soit atteinte.
+	     elles créent un thread pour découpler le travail entre le sink pad et le source pad.
+multiqueue ⇒ crée des queues pour plusieurs flux simultanés, et en gère automatiquement l'utilisation comme la mise en tampon, la gestion des queues non-utilisées… C'est un élément qu'on utilise généralement pas directement (est utilisé dans decodebin).
+tee	   ⇒ pour dupliquer un flux vers plusieurs sink pads.
+
+Les capacités:
+¯¯¯¯¯¯¯¯¯¯¯¯¯
+capsfilter ⇒ sélection de capacités (gst-launch … ! video/x-raw-gray ! …) avec les GstCapsFilter.
+typefind   ⇒ détecte le type de média contenue dans le flux entrant et adapte son source-pad-caps à celui-ci avant d'émettre le signal “have-type”.
+	     Il est utilisé par decodebin. On peut aussi utiliser les GstDiscoverer qui fournissent plus d'infos.
+
+Le débugage:
+¯¯¯¯¯¯¯¯¯¯¯
+fakesink ⇒ sert à avaler les données en bout de pipeline pour. Il peut être très verbeux si on utilise -v avec gst-launch, il y a donc une propriétés pour le rendre silencieux:
+	   gst-launch -v audiotestsrc num-buffers=1000 ! fakesink sync=false silent=true
+identity ⇒ faux élément qui laisse passer les données sans les modifier. Il possède de nombreuses fonctionnalités de diagnostique
+	   ex: gst-launch-1.0 audiotestsrc ! identity drop-probability=0.1 ! audioconvert ! autoaudiosink
