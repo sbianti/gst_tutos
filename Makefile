@@ -4,7 +4,7 @@ EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-6b_media-format_and_pad-caps playback-2_sub-management \
 	basic-7_multithreading_and_pad_availability \
 	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline \
-	basic-9_media-info-gathering basic-12_streaming \
+	basic-9_media-info-gathering basic-12_streaming basic-15_clutter \
 	playback-4_progressive_streaming basic-13_playback-speed
 
 CC = gcc
@@ -14,6 +14,7 @@ GTK_VERSION ?= 3.0
 
 CFLAGS += `pkg-config --cflags gstreamer-$(GST_VERSION)`
 CFLAGS_GTK = `pkg-config --cflags gtk+-$(GTK_VERSION)`
+CFLAGS_CLUTTER_GST = `pkg-config --cflags clutter-gst-1.0`
 
 PKG_CONFIG_PATH ?= $(LOCAL_PKG_CONFIG_PATH)
 export PKG_CONFIG_PATH
@@ -24,6 +25,7 @@ LDFLAGS_GTK = `pkg-config --libs gtk+-$(GTK_VERSION)`
 LDFLAGS_GST_INTERFACES_0.10 = `pkg-config --libs gstreamer-interfaces-$(GST_VERSION)`
 LDFLAGS_GST_INTERFACES_1.0 =`pkg-config --libs gstreamer-video-1.0`
 LDFLAGS_GST_PBUTILS = `pkg-config --libs gstreamer-pbutils-$(GST_VERSION)`
+LDFLAGS_CLUTTER_GST = `pkg-config --libs clutter-gst-1.0`
 
 ifeq ($(origin debug), undefined)
 	CFLAGS += -O2
@@ -38,6 +40,9 @@ basic-5_gui_toolkit : CFLAGS += $(CFLAGS_GTK)
 basic-5_gui_toolkit : LDFLAGS += $(LDFLAGS_GTK) $(LDFLAGS_GST_INTERFACES_$(GST_VERSION))
 
 basic-9_media-info-gathering : LDFLAGS += $(LDFLAGS_GST_PBUTILS)
+
+basic-15_clutter : CFLAGS += $(CFLAGS_CLUTTER_GST)
+basic-15_clutter : LDFLAGS += $(LDFLAGS_CLUTTER_GST)
 
 .PHONY : clean
 clean:
