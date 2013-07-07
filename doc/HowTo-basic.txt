@@ -650,3 +650,40 @@ fakesink ⇒ sert à avaler les données en bout de pipeline pour. Il peut être
 	   gst-launch -v audiotestsrc num-buffers=1000 ! fakesink sync=false silent=true
 identity ⇒ faux élément qui laisse passer les données sans les modifier. Il possède de nombreuses fonctionnalités de diagnostique
 	   ex: gst-launch-1.0 audiotestsrc ! identity drop-probability=0.1 ! audioconvert ! autoaudiosink
+
+
+XV) basic-15_clutter.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Clutter est une bibliothèque graphique utilisant OpenGL pour le rendu.
+ L'élément cluttersink de clutter-gst permet d'utiliser le flux issue d'un pipeline comme une texture.
+
+[ rq: il faut clutter-gst-devel ; si intallé au niveau système, il ne fait pas le lien avec le gstreamer installé en local ]
+
+A/ Initialisation
+#include <clutter-gst/clutter-gst.h>
+if (clutter_gst_init(&argc, &argv) != CLUTTER_INIT_SUCCESS) …
+	→ encapsule le gst_init classique.
+
+B/ Création d'une texture pour y afficher nos images
+texture = CLUTTER_ACTOR(g_object_new(CLUTTER_TYPE_TEXTURE, "disable-slicing", TRUE, NULL));
+
+C/ Création du sink: autocluttersink ou cluttersink si pas disponible
+
+D/ Application de la texture au sink, et du sink au pipeline
+g_object_set(sink, "texture", texture, NULL);
+g_object_set(pipeline, "video-sink", sink, NULL);
+
+E/ Bidouillage avec une timeline, des stages et des groupes de stages…
+
+F/ Bidouillage avec les dimensions de la vidéo…
+g_signal_connect(texture, "size-change", G_CALLBACK(size_change), NULL);
+
+
+XVI) Plateform-specific elements:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ «Tuto» dédié aux cas où on n'utilise pas les éléments qui font le café comme playbin, autovideosink…
+
+Spécifiques à linux: ximagesink, xvimagesink, alsasink, pulsesink
+Windows / Linux / MacOS: cluttersink
+
+Rien de bien intéressant dans ce dernier tuto.
