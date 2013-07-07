@@ -66,7 +66,6 @@ int main(int argc, char *argv[]) {
   } else
     pipeline_str = g_strdup_printf("%s uri=%s", PLAYBIN, DEFAULT_URI);
 
-  /* clutter-gst takes care of initializing Clutter and GStreamer */
   if (clutter_gst_init(&argc, &argv) != CLUTTER_INIT_SUCCESS) {
     g_error("Failed to initialize clutter\n");
     return -1;
