@@ -610,8 +610,11 @@ Les Bin:
 3) decodebin	⇒ contruit une branche contenant les décodeurs et multiplexeurs disponibles. Il en résulte éventuellement plusieurs source pads (autant que de flux contenus)
 	ex: gst-launch souphttpsrc location=… ! decodebin ! autovideosink
 
-Les file I/O: filesrc et filesink
+Les file I/O:
 ¯¯¯¯¯¯¯¯¯¯¯¯
+filesrc, filesink ⇒ vus
+multisink ⇒ sauve chaque gstbuffer dans son propre fichier au lieu de tout mettre dans un seul fichier (utile avec des éléments comme ffenc_mjpeg)
+
 Le réseau: souphttpsrc
 ¯¯¯¯¯¯¯¯¯
 Les générateurs de flux: videotestsrc et audiotestsrc
