@@ -6,6 +6,14 @@
 #define PLAYBIN "playbin"
 #endif
 
+#define OLD_CLUTTER (CLUTTER_MAJOR_VERSION == 1 && CLUTTER_MINOR_VERSION < 12)
+
+#if OLD_CLUTTER
+#define CLUTTER_STAGE_NEW clutter_stage_get_default
+#else
+#define CLUTTER_STAGE_NEW clutter_stage_new
+#endif
+
 #define DEFAULT_URI "http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
 
 /* Setup the video texture once its size is known */
@@ -39,11 +47,20 @@ void size_change(ClutterActor *texture,
 
   clutter_actor_set_position(texture, new_x, new_y);
   clutter_actor_set_size(texture, new_width, new_height);
+
+#if OLD_CLUTTER
   clutter_actor_set_rotation(texture, CLUTTER_Y_AXIS, 0.0, stage_width/2, 0, 0);
+  clutter_animation_set_loop(animation, TRUE);
   /* Animate it */
   animation = clutter_actor_animate(texture, CLUTTER_LINEAR, 10000,
 				    "rotation-angle-y", 360.0, NULL);
-  clutter_animation_set_loop(animation, TRUE);
+#else
+  clutter_actor_set_rotation_angle(texture, CLUTTER_Y_AXIS, 0.0);
+  clutter_timeline_set_repeat_count((ClutterTimeline*) user_data, 0);
+  /* Animate it */
+  animation = clutter_actor_animate(texture, CLUTTER_LINEAR, 10000,
+				    "rotation-angle-y", 360.0, NULL);
+#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -71,7 +88,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  stage = clutter_stage_get_default();
+  stage = CLUTTER_STAGE_NEW();
 
   timeline = clutter_timeline_new(1000);
   g_object_set(timeline, "loop", TRUE, NULL);
@@ -79,7 +96,7 @@ int main(int argc, char *argv[]) {
   /* Create new texture and disable slicing so the video is properly mapped onto it */
   texture = CLUTTER_ACTOR(g_object_new(CLUTTER_TYPE_TEXTURE, "disable-slicing",
 				       TRUE, NULL));
-  g_signal_connect(texture, "size-change", G_CALLBACK(size_change), NULL);
+  g_signal_connect(texture, "size-change", G_CALLBACK(size_change), timeline);
 
   pipeline = gst_parse_launch(pipeline_str, NULL);
 
@@ -103,8 +120,13 @@ int main(int argc, char *argv[]) {
   clutter_timeline_start(timeline);
 
   /* Add texture to the stage, and show it */
+#if OLD_CLUTTER
   clutter_group_add(CLUTTER_GROUP(stage), texture);
   clutter_actor_show_all(stage);
+#else
+  clutter_actor_add_child(stage, texture);
+  clutter_actor_show(stage);
+#endif
 
   clutter_main();
 
