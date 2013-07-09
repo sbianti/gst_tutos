@@ -11,22 +11,31 @@
 #endif
 
 #define DEFAULT_URI "http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
+#define PERCENTAGE(val, min, max) (100 * (val - min) / (max - min))
+#define PERCENT_TO_ABSVAL(percent, min, max) ((percent * (max - min)) / 100)
+#define PERCENT_TO_VAL(pct, min, max) (PERCENT_TO_ABSVAL(pct, min, max) + min)
 
 typedef struct _CustomData {
   GstElement *pipeline;
   GMainLoop *loop;
 } CustomData;
 
-/* Process a color balance command */
+enum setting_type_t {absolute, relative};
+
+struct color_setting_t {
+  enum setting_type_t type;
+  gint val;
+};
+
 static void update_color_channel(const gchar *channel_name,
-				 gboolean increase,
-				 GstColorBalance *cb) {
+				 struct color_setting_t setting,
+				 GstColorBalance *cb)
+{
   gdouble step;
   gint value;
   GstColorBalanceChannel *channel = NULL;
   const GList *channels, *l;
 
-  /* Retrieve the list of channels and locate the requested one */
   channels = gst_color_balance_list_channels(cb);
   for (l = channels; l != NULL; l = l->next) {
     GstColorBalanceChannel *tmp = (GstColorBalanceChannel *)l->data;
@@ -36,27 +45,30 @@ static void update_color_channel(const gchar *channel_name,
       break;
     }
   }
-  if (!channel)
+
+  if (channel == NULL)
     return;
 
-  /* Change the channel's value */
-  step = 0.1 * (channel->max_value - channel->min_value);
-  value = gst_color_balance_get_value(cb, channel);
-  if (increase) {
-    value = (gint)(value + step);
-    if (value > channel->max_value)
-      value = channel->max_value;
-  } else {
-    value = (gint)(value - step);
-    if (value < channel->min_value)
-      value = channel->min_value;
+  switch (setting.type) {
+  case absolute:
+    value = PERCENT_TO_VAL(setting.val, channel->min_value, channel->max_value);
+    break;
+  case relative:
+    value = gst_color_balance_get_value(cb, channel);
+    value += PERCENT_TO_ABSVAL(setting.val, channel->min_value,
+			       channel->max_value);
   }
+
+  if (value > channel->max_value)
+    value = channel->max_value;
+  if (value < channel->min_value)
+    value = channel->min_value;
+
   gst_color_balance_set_value(cb, channel, value);
 }
 
-#define PERCENTAGE(val, min, max) (100 * (val - min) / (max - min))
-
-static void print_current_values(GstElement *pipeline) {
+static void print_current_values(GstElement *pipeline)
+{
   const GList *channels, *l;
 
   channels = gst_color_balance_list_channels(GST_COLOR_BALANCE(pipeline));
@@ -64,37 +76,64 @@ static void print_current_values(GstElement *pipeline) {
     GstColorBalanceChannel *channel = (GstColorBalanceChannel *)l->data;
     gint value = gst_color_balance_get_value(GST_COLOR_BALANCE(pipeline),
 					     channel);
-    g_print("%s: %3d%% ",
-	    channel->label,
+    g_print("%s: %3d%% ", channel->label,
 	    PERCENTAGE(value, channel->min_value, channel->max_value)
 	    );
   }
+
   g_print("\n");
 }
 
+static struct color_setting_t parse_param(gchar *str)
+{
+  struct color_setting_t setting;
+
+  setting.val = atoi(str);
+
+  if (setting.val != 0)
+    setting.type = index(str, '%') ? absolute : relative;
+  else if (!g_ascii_isdigit(str[0]) && str[0] != '+' && str[0] != '-')
+    setting.type = relative;
+  else
+    setting.type = absolute;
+
+  return setting;
+}
+
 static gboolean handle_keyboard(GIOChannel *source, GIOCondition cond,
-				CustomData *data) {
+				CustomData *data)
+{
   gchar *str = NULL;
+  struct color_setting_t setting;
 
   if (g_io_channel_read_line(source, &str, NULL, NULL, NULL) !=
       G_IO_STATUS_NORMAL)
     return TRUE;
 
+  /* …read_line puts EOL in str */
+  if (strlen(str) < 3) {
+    setting.type = relative;
+    setting.val = g_ascii_isupper(str[0]) ? 10 : -10;
+  } else {
+    gchar *str_strip = g_strstrip(str+1);
+    setting = parse_param(str_strip);
+  }
+
   switch (g_ascii_tolower(str[0])) {
   case 'c':
-    update_color_channel("CONTRAST", g_ascii_isupper(str[0]),
+    update_color_channel("CONTRAST", setting,
 			 GST_COLOR_BALANCE(data->pipeline));
     break;
   case 'b':
-    update_color_channel("BRIGHTNESS", g_ascii_isupper(str[0]),
+    update_color_channel("BRIGHTNESS", setting,
 			 GST_COLOR_BALANCE(data->pipeline));
     break;
   case 'h':
-    update_color_channel("HUE", g_ascii_isupper(str[0]),
+    update_color_channel("HUE", setting,
 			 GST_COLOR_BALANCE(data->pipeline));
     break;
   case 's':
-    update_color_channel("SATURATION", g_ascii_isupper(str[0]),
+    update_color_channel("SATURATION", setting,
 			 GST_COLOR_BALANCE(data->pipeline));
     break;
   case 'q':
@@ -158,6 +197,7 @@ int main(int argc, char *argv[]) {
     gst_object_unref(data.pipeline);
     return -1;
   }
+
   print_current_values(data.pipeline);
 
   data.loop = g_main_loop_new(NULL, FALSE);
