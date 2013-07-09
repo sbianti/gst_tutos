@@ -2,7 +2,7 @@ EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-3b_dynamic_pipelines basic-4_time_management basic-5_gui_toolkit \
 	basic-6_media-format_and_pad-caps playback-1_playbin \
 	basic-6b_media-format_and_pad-caps playback-2_sub-management \
-	basic-7_multithreading_and_pad_availability \
+	basic-7_multithreading_and_pad_availability playback-5_color-balance \
 	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline \
 	basic-9_media-info-gathering basic-12_streaming basic-15_clutter \
 	playback-4_progressive_streaming basic-13_playback-speed
@@ -43,6 +43,8 @@ basic-9_media-info-gathering : LDFLAGS += $(LDFLAGS_GST_PBUTILS)
 
 basic-15_clutter : CFLAGS += $(CFLAGS_CLUTTER_GST)
 basic-15_clutter : LDFLAGS += $(LDFLAGS_CLUTTER_GST)
+
+playback-5_color-balance : LDFLAGS += $(LDFLAGS_GST_INTERFACES_$(GST_VERSION))
 
 .PHONY : clean
 clean:
