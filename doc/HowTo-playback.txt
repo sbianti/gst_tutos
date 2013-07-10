@@ -115,3 +115,16 @@ E/ gboolean refresh_ui(CustomData *data)
       GST_CLOCK_TIME_IS_VALID(duration)) {
       …
 	→ On récupère la position et la durée (en seconde), et on valide ces valeurs.
+
+
+V) playback-5_color-balance.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ De l'équilibrage des couleurs (luminosité, contraste, teinte et saturation).
+ Comment trouver les canaux disponibles (l'un des 4 précédents) ?
+ Comment les changer ?
+
+Playbin implémente l'interface gstcolorbalance (http://gstreamer.freedesktop.org/data/doc/gstreamer/head/gst-plugins-base-libs/html/gst-plugins-base-libs-gstcolorbalance.html). Si un de ses éléments l'implémente aussi, playbin lui transmet les commandes reçues, sinon il ajoute un élément qui l'implémente.
+
+Le code est simple.
+
+Fonctionnalités ajoutées: on peut donner un incrément différent de 10 points (B -34), et on peut donner la valeur exacte (H 40%).
