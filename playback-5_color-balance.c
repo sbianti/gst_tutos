@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <gst/gst.h>
+#include <locale.h>
 
 #if GST_VERSION_MAJOR == 0
 #define PLAYBIN "playbin2"
@@ -156,17 +157,21 @@ int main(int argc, char *argv[]) {
   GIOChannel *io_stdin;
   char *pipeline_str;
 
+  setlocale(LC_ALL, "fr_FR.utf8");
+
   gst_init(&argc, &argv);
 
   memset(&data, 0, sizeof(data));
 
   g_print(
     "USAGE: Choose one of the following options, then press enter:\n"
-    " 'C' to increase contrast, 'c' to decrease contrast\n"
-    " 'B' to increase brightness, 'b' to decrease brightness\n"
-    " 'H' to increase hue, 'h' to decrease hue\n"
-    " 'S' to increase saturation, 's' to decrease saturation\n"
-    " 'Q' to quit\n");
+    " 'C' to increase contrast of 10%, 'c' to decrease contrast of 10%\n"
+    " 'B' to increase brightness of 10%, 'b' to decrease brightness of 10%\n"
+    " 'H' to increase hue of 10%, 'h' to decrease hue of 10%\n"
+    " 'S' to increase saturation of 10%, 's' to decrease saturation of 10%\n\n"
+    " You can also use: « c -60 » which decrease the contrast of 60pts\n"
+    " Or: « S 55% » which sets saturation to 60%"
+    " 'Q' to quit\n\n");
 
   if (argc > 1) {
     if (g_str_has_prefix(argv[1], "http://") ||
