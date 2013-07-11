@@ -5,7 +5,8 @@ EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-7_multithreading_and_pad_availability playback-5_color-balance \
 	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline \
 	basic-9_media-info-gathering basic-12_streaming basic-15_clutter \
-	playback-4_progressive_streaming basic-13_playback-speed
+	playback-4_progressive_streaming basic-13_playback-speed \
+	playback-6_audio-visualization
 
 CC = gcc
 
