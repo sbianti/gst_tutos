@@ -36,6 +36,25 @@ int main(int argc, char *argv[]) {
   GstElementFactory *selected_factory = NULL;
   guint flags;
   char *pipeline_str;
+  gboolean list_plugins = FALSE;
+  gchar *plugin_name = NULL;
+  GError *error = NULL;
+  GOptionContext *context;
+  GOptionEntry options[] = {
+    { "list-plugins", 'l', 0, G_OPTION_ARG_NONE, &list_plugins,
+      "list available plugins and exits", NULL },
+    { "plugin", 'p', 0, G_OPTION_ARG_STRING, &plugin_name,
+      "set the desired plugin", NULL },
+    { NULL }
+  };
+
+  context = g_option_context_new("");
+  g_option_context_add_main_entries(context, options, "");
+  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+    g_print("option parsing failed: %s\n", error->message);
+    return -1;
+  }
+  g_option_context_free(context);
 
   if (argc > 1) {
     if (g_str_has_prefix(argv[1], "http://") ||
@@ -56,6 +75,9 @@ int main(int argc, char *argv[]) {
   list = gst_registry_feature_filter(GET_PLUGIN_REGISTRY,
 				     filter_vis_features, FALSE, NULL);
 
+  if (plugin_name == NULL)
+    plugin_name = "GOOM";
+
   g_print("Available visualization plugins:\n");
   for (walk = list; walk != NULL; walk = g_list_next(walk)) {
     const gchar *name;
@@ -65,7 +87,7 @@ int main(int argc, char *argv[]) {
     name = gst_element_factory_get_longname(factory);
     g_print("  %s\n", name);
 
-    if (selected_factory == NULL || g_str_has_prefix(name, "GOOM")) {
+    if (selected_factory == NULL || g_str_has_prefix(name, plugin_name)) {
       selected_factory = factory;
     }
   }
@@ -76,6 +98,9 @@ int main(int argc, char *argv[]) {
     g_print("No visualization plugins found!\n");
     return -1;
   }
+
+  if (list_plugins == TRUE)
+    return 0;
 
   g_print("Selected '%s'\n",
 	  gst_element_factory_get_longname(selected_factory));
