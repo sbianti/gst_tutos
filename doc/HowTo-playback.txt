@@ -128,3 +128,41 @@ Playbin implémente l'interface gstcolorbalance (http://gstreamer.freedesktop.or
 Le code est simple.
 
 Fonctionnalités ajoutées: on peut donner un incrément différent de 10 points (B -34), et on peut donner la valeur exacte (H 40%).
+
+
+VI) playback-6_audio-visualization.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Activer une visualisation si le flux ne contient pas de vidéo.
+
+A/ Activer la visualisation
+  g_object_get(pipeline, "flags", &flags, NULL);
+  flags |= 0x8;
+  g_object_set(pipeline, "flags", flags, NULL);
+	→ avec 0x8 = «vis - Render visualisation when no video is present»
+	  Par défaut, c'est “goom” qui est sélectionné. Si goom n'est pas présent (plugin good) et qu'on ne fait rien de plus, la visualisation sera désactivée.
+
+ _______________________________________________________________________________
+|			Les GstRegistry						|
+|			¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯						|
+| Ils sont une liste de plugins (GstPlugin) et de fonctions pour les manipuler. |
+| Chaque GstPlugin correspond au fichier (lib) contenant ce plugin.  		|
+| Si une application veut des infos sur un plugin, ou savoir quel plugin 	|
+| fournit telles fonctionnalités, elle doit charger le plugin concerné (ou tous)|
+| et chercher dedans les infos demandées → c'est une perte de temps !!		|
+| Pour éviter cela, GStreamer crée un fichier qui cache ces infos:		|
+| (~/.gstreamer-$GST_API_VERSION/registry-$ARCH.bin).				|
+ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+B/ Chercher les éléments disponibles pour la visualisation
+ list = gst_registry_feature_filter(get_registry_get(), filter_vis_features, FALSE, NULL);
+	→ get_registry_get() ⇒ renvoie le registre des plugins
+	→ filter_vis_features ⇒ filtre 
+	→ False ⇒ renvoie tous les plugins qui correspondent. (True renverrait seulement le 1er)
+	→ NULL ⇒ userdata pour le filtre
+
+C/ Filtrer les fonctionnalités d'un plugin
+ gboolean filter_vis_features (GstPluginFeature *feature, gpointer data)
+	→ Les plugins sont représentés par des GstPlugin qui contiennent des GstPluginFeature.
+	  Certaines de ces GstPluginFeature sont des Factories (GstElementFactory), parmis lesquelles on trouve «Generic», «Video/Overlay/Subtitle», «Sink/Audio», ou encore «Visualization».
+	  C'est cette dernière catégorie qui nous intéresse.
+	  On peut alors encore filtrer par nom et instancier l'élément.
