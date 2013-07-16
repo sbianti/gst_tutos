@@ -6,7 +6,7 @@ EXE = basic-1_hello basic-2_concepts basic-3_dynamic_pipelines \
 	basic-8_short-cutting_pipeline playback-3_short-cutting_pipeline \
 	basic-9_media-info-gathering basic-12_streaming basic-15_clutter \
 	playback-4_progressive_streaming basic-13_playback-speed \
-	playback-6_audio-visualization
+	playback-6_audio-visualization playback-7_custom-playbin-sinks
 
 CC = gcc
 
