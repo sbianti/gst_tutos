@@ -1,3 +1,5 @@
+#include <string.h>
+#include <stdio.h>
 #include <gst/gst.h>
 
 #if GST_VERSION_MAJOR == 0
@@ -7,13 +9,73 @@
 #endif
 
 #define DEFAULT_URI "http://docs.gstreamer.com/media/sintel_trailer-480p.webm"
+#define BAND_NB 3
 
-int main(int argc, char *argv[]) {
+typedef struct _CustomData {
+  GstElement *equalizer;
+  GMainLoop *loop;
+} CustomData;
+
+struct band_st {
+  gchar *name;
+  gchar *caracteristic;
+};
+
+static struct band_st band[BAND_NB] = {{"band0", "20Hz-100Hz"},
+				       {"band1", "101Hz-1100Hz"},
+				       {"band2", "1101Hz-11kHz"}};
+
+static void print_current_values(CustomData *data)
+{
+  int i;
+  gdouble val;
+
+  g_print("\t Intervalle par bande [-24db +12db]\n");
+  for (i=0; i < BAND_NB; i++) {
+    g_object_get(G_OBJECT(data->equalizer), band[i].name, &val, NULL);
+    g_print("%s [%s]: %3ddB   ", band[i].name, band[i].caracteristic, (int)val);
+  }
+
+  g_print("\n");
+}
+
+static gboolean handle_keyboard(GIOChannel *source, GIOCondition cond,
+				CustomData *data)
+{
+  gchar *str = NULL;
+
+  if (g_io_channel_read_line(source, &str, NULL, NULL, NULL) !=
+      G_IO_STATUS_NORMAL)
+    return TRUE;
+
+  switch (str[0]) {
+  case '0':
+  case '1':
+  case '2':
+    g_object_set(G_OBJECT(data->equalizer), band[str[0] - '0'].name,
+		 (gdouble) atoi(str+1), NULL);
+    break;
+  case 'q':
+    g_main_loop_quit(data->loop);
+  }
+
+  g_free(str);
+
+  print_current_values(data);
+
+  return TRUE;
+}
+
+int main(int argc, char *argv[])
+{
   GstElement *pipeline, *bin, *equalizer, *convert, *sink;
   GstPad *pad, *ghost_pad;
-  GstBus *bus;
-  GstMessage *msg;
   char *pipeline_str;
+  GIOChannel *io_stdin = g_io_channel_unix_new(fileno(stdin));
+  CustomData data;
+  GstStateChangeReturn ret;
+
+  memset(&data, 0, sizeof(data));
 
   if (argc > 1) {
     if (g_str_has_prefix(argv[1], "http://") ||
@@ -31,6 +93,8 @@ int main(int argc, char *argv[]) {
 
   gst_init(&argc, &argv);
 
+  g_io_add_watch(io_stdin, G_IO_IN, (GIOFunc)handle_keyboard, &data);
+
   pipeline = gst_parse_launch(pipeline_str, NULL);
 
   equalizer = gst_element_factory_make("equalizer-3bands", "equalizer");
@@ -41,6 +105,8 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  data.equalizer = equalizer;
+
   bin = gst_bin_new("audio_sink_bin");
   gst_bin_add_many(GST_BIN(bin), equalizer, convert, sink, NULL);
   gst_element_link_many(equalizer, convert, sink, NULL);
@@ -50,21 +116,21 @@ int main(int argc, char *argv[]) {
   gst_element_add_pad(bin, ghost_pad);
   gst_object_unref(pad);
 
-  g_object_set(G_OBJECT(equalizer), "band1", (gdouble)-24.0, NULL);
-  g_object_set(G_OBJECT(equalizer), "band2", (gdouble)-24.0, NULL);
-
   g_object_set(GST_OBJECT(pipeline), "audio-sink", bin, NULL);
 
-  gst_element_set_state(pipeline, GST_STATE_PLAYING);
+  ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
+  if (ret == GST_STATE_CHANGE_FAILURE) {
+    g_printerr("Unable to set the pipeline to the playing state.\n");
+    gst_object_unref(pipeline);
+    return -1;
+  }
 
-  bus = gst_element_get_bus(pipeline);
-  msg = gst_bus_timed_pop_filtered(bus, GST_CLOCK_TIME_NONE,
-				   GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
+  print_current_values(&data);
 
-  if (msg != NULL)
-    gst_message_unref(msg);
+  data.loop = g_main_loop_new(NULL, FALSE);
+  g_main_loop_run(data.loop);
 
-  gst_object_unref(bus);
+  g_io_channel_unref(io_stdin);
 
   gst_element_set_state(pipeline, GST_STATE_NULL);
 
