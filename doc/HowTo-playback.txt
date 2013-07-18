@@ -166,3 +166,23 @@ C/ Filtrer les fonctionnalités d'un plugin
 	  Certaines de ces GstPluginFeature sont des Factories (GstElementFactory), parmis lesquelles on trouve «Generic», «Video/Overlay/Subtitle», «Sink/Audio», ou encore «Visualization».
 	  C'est cette dernière catégorie qui nous intéresse.
 	  On peut alors encore filtrer par nom et instancier l'élément.
+
+
+VII) playback-7_custom-playbin-sinks.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Comment choisir le sink que playbin va utiliser ?
+ Comment construire un pipeline complexe en guise de sink ?
+
+Playbin a deux propriétés audio-sink et video-sink. Elles permettent d'utiliser les éléments désirés.
+Mais on peut aussi utiliser un assemblage d'éléments incorporé à un Gstbin.
+
+Le bin se connecte au pipeline via un ghostpad (un pad qui joue le rôle d'une passerelle entre l'extérieur et un vrai pad à l'intérieur du bin).
+
+A/ equalizer-3bands
+ C'est un égaliseur sonore. Il y a aussi equalizer-10bands et equalizer-nbands.
+ Les différentes valeurs des bandes 0, 1 et 2 représentent les intervalles de fréquence [20Hz-100Hz], [101Hz-1100Hz] et [1101Hz-11kHz].
+
+B/
+ Connection du pad static de l'égaliseur (1er élément de la «chaine sink») au ghostpad "sink" du bin.
+ gst_element_pad_add(bin, ghost_pad) transfert la propriété du ghostpad au bin → pas besoin de le libérer par la suite, ce qui n'est pas le cas du pad originel.
+
