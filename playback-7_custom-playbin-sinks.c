@@ -39,13 +39,12 @@ static void print_current_values(CustomData *data)
   g_print("\n");
 }
 
-static gboolean handle_keyboard(GIOChannel *source, GIOCondition cond,
+static gboolean handle_keyboard(GIOChannel *src, GIOCondition cond,
 				CustomData *data)
 {
   gchar *str = NULL;
 
-  if (g_io_channel_read_line(source, &str, NULL, NULL, NULL) !=
-      G_IO_STATUS_NORMAL)
+  if (g_io_channel_read_line(src, &str, NULL, NULL, NULL) != G_IO_STATUS_NORMAL)
     return TRUE;
 
   switch (str[0]) {
