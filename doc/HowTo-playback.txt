@@ -186,3 +186,10 @@ B/
  Connection du pad static de l'égaliseur (1er élément de la «chaine sink») au ghostpad "sink" du bin.
  gst_element_pad_add(bin, ghost_pad) transfert la propriété du ghostpad au bin → pas besoin de le libérer par la suite, ce qui n'est pas le cas du pad originel.
 
+
+VIIb) playback-7b_custom-playbin-sinks.c:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Version 2: on peut régler les propriétés des éléments du plugin gaudieffects.
+	ex: ./playback-7b_custom-playbin-sinks «vidéo-path» -e burn -p "silent,bool,true;adjustment,uint,175"
+
+
