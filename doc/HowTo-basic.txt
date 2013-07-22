@@ -644,6 +644,8 @@ tee	   ⇒ pour dupliquer un flux vers plusieurs sink pads.
 Les capacités:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯
 capsfilter ⇒ sélection de capacités (gst-launch … ! video/x-raw-gray ! …) avec les GstCapsFilter.
+	     Autre syntaxe: gst-launch … ! capsfilter caps="…" name=… ! …
+	     Cette dernière permettant de donner un nom au capsfilter.
 typefind   ⇒ détecte le type de média contenue dans le flux entrant et adapte son source-pad-caps à celui-ci avant d'émettre le signal “have-type”.
 	     Il est utilisé par decodebin. On peut aussi utiliser les GstDiscoverer qui fournissent plus d'infos.
 
