@@ -193,3 +193,90 @@ Version 2: on peut régler les propriétés des éléments du plugin gaudieffect
 	ex: ./playback-7b_custom-playbin-sinks «vidéo-path» -e burn -p "silent,bool,true;adjustment,uint,175"
 
 
+VIII) De l'accélération matérielle:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Dans l'état actuel des choses, chaque constructeur de carte graphique fournie sa propre API pour accéder au GPU ; aucun standard n'a émergé jusqu'à présent.
+
+En date de juillet 2012 (vieux d'un an), il y a au moins 8 APIs différentes d'accéleration vidéo:
+
+Linux:
+¯¯¯¯¯
+  VAAPI : Intel (POM! … pom pom pom pom!) spécifiée en 2007 pour Xwindow system, opensource, utilisable donc par d'autres manufactureurs (Imagination Technologies et S3 graphics)
+	→ Accessible par GStreamer via les plugins gstreamer-vaapi et fluvadec (Fluendo).
+
+  VDPAU : Nvidia 2008, opensource mais personne d'autre ne l'utilise.
+	→ Accessible par GStreamer via vdpau et fluvadec.
+
+  XVBA : AMD, c'est une extension de Xv pour X. Nécessite des pilotes propriétaires.
+	→ Accessible par GStreamer via fluvadec.
+
+Win:
+¯¯¯
+  DXVA  → Accessible par GStreamer via fluvadec.
+
+MacOs:
+¯¯¯¯¯
+  VDA : accélère seulement le décodage du h264.
+	→  fluvadec
+
+Indépendants:
+¯¯¯¯¯¯¯¯¯¯¯¯
+  OpenMax : Khronos group, opensource
+	→ gstreamer-omx
+
+  OVD : AMD pour promouvoir le Universal Video Decode
+	→ non disponible pour GStreamer
+
+  DCE : Texas Instrument, opensource, pour Linux et ARM.
+	→ gstreamer-ducati
+
+C'est à l'application de sélectionner le bon plugin parmis gstreamer-vaapi ou gstreamer-vdpau (cependant, playbin le fait).
+Concernant fluendo, c'est lui-même qui détecte à l'exécution quel élément utiliser.
+
+A/ Fonctionnement de l'accélération matérielle
+ Elle se décompose en quelque étapes, les plugins offrant un élément pour chacune d'elles.
+ Exemple avec gstreamer-vaapi :
+ a) vaapidecode   ⇒ Le décodage vidéo
+ b) << rien >>	  ⇒ le traitement (post-processing)
+ c) vaapiupload	  ⇒ transfert des images brutes vers le GPU
+ d) vaapidownload ⇒ récupération des images vers la mémoire
+ e) vaapisink 	  ⇒ La présentation des images décodées
+
+(d) sert donc à récupérer des images de la mémoire du GPU pour les traiter dans la RAM. Il est évidemment plus efficace de les laisser dans le GPU.
+
+B/ Deux types de buffers: les conventionnels et les «hardware buffers»
+ Les conventionnels voyagent d'éléments en éléments, mais leur contenu est un hardware buffers ID.
+ Pour cela, les buffers conventionnels ont des caps spéciales (ex: video/x-fluendo-va), elles permettent à l'auto-plugger de faire ce qu'il faut si le bon plugin est présent.
+
+C/ Le classement des plugins
+ Auto-plugg sélectionne parmis les éléments équivalents (au regard des caps) celui qui a le meilleur classement.
+ Pour être sûr d'activer l'accélération, il faut trafiquer le classement :
+
+static void enable_factory(const gchar *name, gboolean enable) {
+    GstRegistry *registry = NULL;
+    GstElementFactory *factory = NULL;
+     
+    registry = gst_registry_get_default();
+    if (!registry) return;
+     
+    factory = gst_element_factory_find(name);
+    if (!factory) return;
+     
+    if (enable) {
+        gst_plugin_feature_set_rank(GST_PLUGIN_FEATURE(factory),
+				    GST_RANK_PRIMARY + 1);
+    }
+    else {
+        gst_plugin_feature_set_rank(GST_PLUGIN_FEATURE(factory),
+				    GST_RANK_NONE);
+    }
+     
+    gst_registry_add_feature(registry, GST_PLUGIN_FEATURE(factory));
+    return;
+}
+
+	→ 4 catégories de classement existent: NONE, MARGINAL, SECONDARY et PRIMARY
+	  Donc «GST_RANK_PRIMARY + 1» assure de le mettre en tête du classement.
+	  Classer un élément à NONE assure qu'il ne sera jamais sélectionné.
+
+Pour terminer, il faut vérifier les codecs supportés par les différents plugins car tous ne sont pas toujours disponibles.
