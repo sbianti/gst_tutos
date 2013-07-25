@@ -280,3 +280,26 @@ static void enable_factory(const gchar *name, gboolean enable) {
 	  Classer un élément à NONE assure qu'il ne sera jamais sélectionné.
 
 Pour terminer, il faut vérifier les codecs supportés par les différents plugins car tous ne sont pas toujours disponibles.
+
+
+IX) Audio numérique et absence de conversion:
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+ Les appareils audio modernes, via des câbles S/PDIF, acceptent des données numériques aussi bien qu'analogiques, dans un format compressé ou brut.
+ Dans ce cas, GStreamer n'a pas besoin de décoder et peut se contenter d'envoyer au sink avec un traitement minimum.
+
+A/ Fonctionnement interne:
+ Il faut d'abord activer l'audio numérique au niveau de la carte son (opération utilisateur). Alors l'audiosink (pulsesink), le détecte et change son input caps en conséquence. ex: audio/x-raw-int ou audio/x-raw-float, voir audio/mpeg, audio/x-ac3, audio/x-eac3 ou encore audio/x-dts.
+ Lorsque playbin construit son pipeline, il connecte directement le demuxer au sink, sans y mettre de décodeur.
+
+ Dans le cas où c'est alsasink qui est utilisé, il y a une opération supplémentaire: la sélection du périphérique audio via une de ses propriétés.
+
+B/ Précautions
+ Lorsque l'audio numérique est activée, l'audiosink expose toutes les caps possibles car il n'y a aucun moyen de savoir ce dont est capable le périphérique concerné.
+ Il peut donc y avoir quelque problèmes au décodage côté périphérique.
+ Le seul moyen de résoudre cela est que l'utilisateur intervienne.
+
+ Certains pilotes permettent de sélectionner les formats supportés par le périph. Dans ce cas, GStreamer n'expose que ces caps là.
+
+Une autre solution peut être de créer un sinkbin perso contenant un capsfilter et un sink audio, le capsfilter sachant quels caps accepter. Cela requiert toujours une intervention de l'utilisateur, mais elle est faite au niveau applicatif.
+
+Rq: autoaudiosink ne supporte que raw/audio comme format numérique.
