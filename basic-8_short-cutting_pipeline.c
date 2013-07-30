@@ -75,14 +75,14 @@ static gboolean push_data(CustomData *data) {
   gint num_samples = CHUNK_SIZE / 2; /* Because each sample is 16 bits */
   gfloat freq;
 
-  buffer = gst_buffer_new_and_alloc (CHUNK_SIZE);
+  buffer = gst_buffer_new_and_alloc(CHUNK_SIZE);
 
-  GST_BUFFER_TIMESTAMP (buffer) =
-    gst_util_uint64_scale (data->num_samples, GST_SECOND, SAMPLE_RATE);
-  GST_BUFFER_DURATION (buffer) =
-    gst_util_uint64_scale (CHUNK_SIZE, GST_SECOND, SAMPLE_RATE);
+  GST_BUFFER_TIMESTAMP(buffer) =
+    gst_util_uint64_scale(data->num_samples, GST_SECOND, SAMPLE_RATE);
+  GST_BUFFER_DURATION(buffer) =
+    gst_util_uint64_scale(CHUNK_SIZE, GST_SECOND, SAMPLE_RATE);
 
-  raw = (gint16 *)GST_BUFFER_DATA (buffer);
+  raw = (gint16 *)GST_BUFFER_DATA(buffer);
   data->c += data->d;
   data->d -= data->c / 1000;
   freq = 1100 + 1000 * data->d;
@@ -93,13 +93,12 @@ static gboolean push_data(CustomData *data) {
   }
   data->num_samples += num_samples;
 
-  g_signal_emit_by_name (data->element[APP_SRC], "push-buffer", buffer, &ret);
+  g_signal_emit_by_name(data->element[APP_SRC], "push-buffer", buffer, &ret);
 
-  gst_buffer_unref (buffer);
+  gst_buffer_unref(buffer);
 
-  if (ret != GST_FLOW_OK) {
+  if (ret != GST_FLOW_OK)
     return FALSE;
-  }
 
   return TRUE;
 }
@@ -130,7 +129,7 @@ static gboolean push_data(CustomData *data) {
   }
 
   printf("\rVoici un buffer de %d octets ; %d échantillons envoyés",
-	  info.size, data->num_samples + num_samples);
+	 info.size, data->num_samples + num_samples);
 
   /* Generate some psychodelic waveforms */
   raw = (gint16 *)info.data;
@@ -163,7 +162,7 @@ static gboolean push_data(CustomData *data) {
 static void start_feed(GstElement *source, guint size, CustomData *data) {
   if (data->sourceid == 0) {
     g_print("Start feeding\n");
-    data->sourceid = g_idle_add((GSourceFunc) push_data, data);
+    data->sourceid = g_idle_add((GSourceFunc)push_data, data);
   }
 }
 
