@@ -12,8 +12,8 @@
 #define NEW_SAMPLE_SIGNAL_NAME "new-buffer"
 #define NEW_SAMPLE_ACTION_NAME "pull-buffer"
 #else
-#define AUDIO_CAPS "audio/x-raw,channels=1,rate=%d,signed=(boolean)true," \
-  "width=16,depth=16,endianness=BYTE_ORDER"
+#define AUDIO_CAPS "audio/x-raw,channels=1,rate=%d," \
+  "format=S16LE,layout=interleaved"
 #define TEE_SRC_NAME "src_%u"
 #define NEW_SAMPLE_SIGNAL_NAME "new-sample"
 #define NEW_SAMPLE_ACTION_NAME "pull-sample"
