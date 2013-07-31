@@ -173,7 +173,7 @@ VII) playback-7_custom-playbin-sinks.c:
  Comment choisir le sink que playbin va utiliser ?
  Comment construire un pipeline complexe en guise de sink ?
 
-Playbin a deux propriétés audio-sink et video-sink. Elles permettent d'utiliser les éléments désirés.
+Playbin a deux propriétés audio-sink et video-sink qui permettent d'utiliser les éléments désirés.
 Mais on peut aussi utiliser un assemblage d'éléments incorporé à un Gstbin.
 
 Le bin se connecte au pipeline via un ghostpad (un pad qui joue le rôle d'une passerelle entre l'extérieur et un vrai pad à l'intérieur du bin).
@@ -245,7 +245,7 @@ A/ Fonctionnement de l'accélération matérielle
 (d) sert donc à récupérer des images de la mémoire du GPU pour les traiter dans la RAM. Il est évidemment plus efficace de les laisser dans le GPU.
 
 B/ Deux types de buffers: les conventionnels et les «hardware buffers»
- Les conventionnels voyagent d'éléments en éléments, mais leur contenu est un hardware buffers ID.
+ Les hardware buffers sont comme des conventionnels (ils voyagent d'éléments en éléments), mais leur contenu est un hardware buffers ID.
  Pour cela, les buffers conventionnels ont des caps spéciales (ex: video/x-fluendo-va), elles permettent à l'auto-plugger de faire ce qu'il faut si le bon plugin est présent.
 
 C/ Le classement des plugins

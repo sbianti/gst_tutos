@@ -416,15 +416,15 @@ g_signal_connect(discoverer, "discovered", G_CALLBACK(callback), &data);
 g_signal_connect(discoverer, "finished", G_CALLBACK(callback), &data);
 	→ Création du GstDiscoverer, connexion des callbacks.
 
-gst_discoverer_start(data.discoverer);
+gst_discoverer_start(discoverer);
 	→ démarrage d'une découverte asynchrone: si la liste des URI est vide, reste en attente.
 
 gst_discoverer_discover_uri_async(discoverer, uri)
 	→ ajoute une URI à la liste de discoverer. Si …start() à été appelé, le processus est actionné.
 
 … = g_main_loop_new(NULL, FALSE);
-  g_main_loop_run(data.loop);
-  gst_discoverer_stop(data.discoverer);
+  g_main_loop_run(loop);
+  gst_discoverer_stop(discoverer);
 	→ loop et stoppage du discovery avec vidage comme il faut de la liste.
 
 B/ on_discovered_cb()
@@ -475,7 +475,7 @@ La variable d'environnement GST_DEBUG est la clef:
 1	ERROR   Affiche toutes les erreurs fatales = les erreurs qui empèchent d'effectuer les actions demandées. L'application peut toujours s'en sortir si les conditions à l'origine de l'erreur sont gérées.
 2	WARNING Affiche tous les warnings = les erreurs non-fatales. Des problèmes visibles pour l'utilisateur sont susceptibles de survenir.
 3	INFO    Affiche tous les messages informatifs. Typiquement, ce sont les évènements qui arrivent une fois ou sont assez rares ou important pour être affichés à ce niveau.
-4	DEBUG   Affiche tous les messages de débug. Ils sont relatifs aux évènement qui arrivent un nombre limité de fois pendant la vie de l'objet ; cela inclue la mise en route, la destruction, le changement de paramètre, ...
+4	DEBUG   Affiche tous les messages de débug. Ils sont relatifs aux évènements qui arrivent un nombre limité de fois pendant la vie de l'objet ; cela inclue la mise en route, la destruction, le changement de paramètres, ...
 5	LOG     Affiche tous les messages. Ce sont les messages des évènements qui arrivent de manière répétée pendant la vie d'un objet ; la lecture classique et les évènements en état stable entre dans cette catégorie.
 
 On peut aussi donner une valeur spécifique pour certains pluggins:
@@ -518,12 +518,12 @@ XII) basic-12_streaming.c:
 
 Buffer:
 L'élément Queue possède une liste de buffers. Dans ce tuto, on l'utilisera par l'intermédiaire de playbin.
-Une application voulant gérer la mise en tampon peut écouter les messages venant de la queue et mettre en pause la lecture lorsque son niveau est trop faible pour ne pas recevoir un EOS non sollicité.
+Une application voulant gérer la mise en tampon peut écouter les messages venant de la Queue et mettre en pause la lecture lorsque son niveau est trop faible pour ne pas recevoir un EOS non sollicité.
 
 Horloge:
 Elle permet la synchronisation entre les différents sinks.
 De nombreux éléments en fournissent une et GStreamer en sélectionne une parmis tous ces éléments.
-Parfois, cette horloge est «perdue», il faut alors en selectionner une autre.
+Parfois, cette horloge est «perdue», il faut alors en sélectionner une autre.
 Cela est fait en passant en PAUSED, puis en PLAYING.
 
 A/
@@ -651,7 +651,7 @@ typefind   ⇒ détecte le type de média contenue dans le flux entrant et adapt
 
 Le débugage:
 ¯¯¯¯¯¯¯¯¯¯¯
-fakesink ⇒ sert à avaler les données en bout de pipeline pour. Il peut être très verbeux si on utilise -v avec gst-launch, il y a donc une propriétés pour le rendre silencieux:
+fakesink ⇒ sert à avaler les données en bout de pipeline pour tester si le reste marche bien. Il peut être très verbeux si on utilise -v avec gst-launch, il y a donc une propriétés pour le rendre silencieux:
 	   gst-launch -v audiotestsrc num-buffers=1000 ! fakesink sync=false silent=true
 identity ⇒ faux élément qui laisse passer les données sans les modifier. Il possède de nombreuses fonctionnalités de diagnostique
 	   ex: gst-launch-1.0 audiotestsrc ! identity drop-probability=0.1 ! audioconvert ! autoaudiosink
