@@ -403,7 +403,7 @@ Configuration du sink avec "emit-signals" à TRUE, connexion à "new-sample"
 IX) basic-9_media-info-gathering.c:
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  Comment extraire des infos d'une URI ?
- Comment savoir à l'avance si on peu jouer le contenu de cette URI ?
+ Comment savoir à l'avance si on peut jouer le contenu de cette URI ?
 
 GstDiscoverer est l'élément à utiliser.
 Il peut être utilisé de deux manières: synchrone ou asynchrone.
